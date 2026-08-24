@@ -1,0 +1,1092 @@
+{
+  "name": "Extracción de Leads",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "76d07bbf-6b2f-4cd9-87fa-c2d1ca7ec7be",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Loop Over Items').item.json.website }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "ea2b8365-5343-4bef-b7b2-f6c8dbfd3637"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sin Web"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8e03e79d-e526-47df-9d62-65e456a30e1f",
+                    "leftValue": "={{ $('Loop Over Items').item.json.website }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Con Web"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1536,
+        -16
+      ],
+      "id": "82eb1cea-e1ca-404e-87c8-69c3894a9bbf",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-pro-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1808,
+        -96
+      ],
+      "id": "8c683b34-b496-4ca1-a61b-3f2e99f5cd69",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Z2HUFo6i9Odry82a",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1e0UuCPK7DZsgkUwQ5Sv4KDLdB1Mcv7Fy7WRSbNL9Di4",
+          "mode": "list",
+          "cachedResultName": "Captacion de Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1e0UuCPK7DZsgkUwQ5Sv4KDLdB1Mcv7Fy7WRSbNL9Di4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1e0UuCPK7DZsgkUwQ5Sv4KDLdB1Mcv7Fy7WRSbNL9Di4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID_Lead": "={{ $('Loop Over Items').item.json.id || $('Loop Over Items').item.json.cid }}",
+            "Nombre_Negocio": "={{ $('Loop Over Items').item.json.title }}",
+            "Rubro": "={{ $('Loop Over Items').item.json.category }}",
+            "Rating_Google": "={{ $('Loop Over Items').item.json.rating }}",
+            "Cant_Reseñas": "={{ $('Loop Over Items').item.json.ratingCount }}",
+            "Web_URL": "={{ $('Loop Over Items').item.json.website }}",
+            "Estado_Web": "={{ $('Loop Over Items').item.json.website ? 'Con Web' : 'Sin Web' }}",
+            "Problema_Detectado": "={{ (() => { \n    try { \n        let textoIA = $('Clasificador de pagina Web').item?.json?.output || $('Clasificador de Leads').item?.json?.output || \"\"; \n        let jsonLimpio = textoIA.substring(textoIA.indexOf('{'), textoIA.lastIndexOf('}') + 1);\n        let listaProblemas = JSON.parse(jsonLimpio).problemas_prioritarios;\n        \n        // Extraemos solo el texto del problema y los unimos con un salto de línea\n        return listaProblemas.map(p => \"• \" + p.problema).join('\\n'); \n    } catch(e) { \n        return 'No se detectaron problemas'; \n    } \n})() }}",
+            "Servicio_Potencial": "={{ (() => { \n    try { \n        let textoIA = $('Clasificador de pagina Web').item?.json?.output || $('Clasificador de Leads').item?.json?.output || \"\"; \n        let jsonLimpio = textoIA.substring(textoIA.indexOf('{'), textoIA.lastIndexOf('}') + 1);\n        return JSON.parse(jsonLimpio).servicio_principal_recomendado; \n    } catch(e) { \n        return 'Sin servicio recomendado'; \n    } \n})() }}",
+            "Propuesta_IA_Generada": "={{ (() => { \n    try { \n        let textoIA = $('Clasificador de pagina Web').item?.json?.output || $('Clasificador de Leads').item?.json?.output || \"\"; \n        let jsonLimpio = textoIA.substring(textoIA.indexOf('{'), textoIA.lastIndexOf('}') + 1);\n        return JSON.parse(jsonLimpio).mensaje_prospeccion; \n    } catch(e) { \n        return 'Error al generar mensaje'; \n    } \n})() }}",
+            "Lead_Score": "={{ (() => { \n    try { \n        let textoIA = $('Clasificador de pagina Web').item?.json?.output || $('Clasificador de Leads').item?.json?.output || \"\"; \n        let jsonLimpio = textoIA.substring(textoIA.indexOf('{'), textoIA.lastIndexOf('}') + 1);\n        return JSON.parse(jsonLimpio).lead_score; \n    } catch(e) { \n        return 'Error al calcular'; \n    } \n})() }}",
+            "Estado_HITL": "Pendiente Revision",
+            "Estado_Comercial": "Sin Contactar",
+            "Direccion": "={{ $('Loop Over Items').item.json.address }}",
+            "Numero": "={{ $('Loop Over Items').item.json.phoneNumber }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID_Lead",
+              "displayName": "ID_Lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre_Negocio",
+              "displayName": "Nombre_Negocio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rubro",
+              "displayName": "Rubro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Direccion",
+              "displayName": "Direccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rating_Google",
+              "displayName": "Rating_Google",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cant_Reseñas",
+              "displayName": "Cant_Reseñas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Web_URL",
+              "displayName": "Web_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Numero",
+              "displayName": "Numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado_Web",
+              "displayName": "Estado_Web",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Problema_Detectado",
+              "displayName": "Problema_Detectado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Servicio_Potencial",
+              "displayName": "Servicio_Potencial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Propuesta_IA_Generada",
+              "displayName": "Propuesta_IA_Generada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Score",
+              "displayName": "Lead_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Propuesta_Editada",
+              "displayName": "Propuesta_Editada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado_HITL",
+              "displayName": "Estado_HITL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado_Comercial",
+              "displayName": "Estado_Comercial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {
+              "headerRow": 2
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2608,
+        -64
+      ],
+      "id": "712fd9b4-6ded-4939-b21f-5f6e468ba239",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "txiY0wOCUhUESgiD",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Loop Over Items').item.json.website }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1632,
+        192
+      ],
+      "id": "678e1858-7ae3-41ae-a70a-645d1997cdb3",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        416
+      ],
+      "id": "bb928c3a-8a0c-46f8-9055-019dab5d8316",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Z2HUFo6i9Odry82a",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# ROL\n\nEres un **Auditor Senior de Sitios Web, CRO, UX/UI, SEO Local, Marketing Digital y Estrategia Comercial**, especializado en analizar páginas web de negocios locales y detectar **oportunidades comerciales reales para servicios de desarrollo, rediseño, optimización y marketing digital**.\n\nTu objetivo principal NO es simplemente evaluar si una página web es buena o mala.\n\nTu objetivo es determinar:\n\n1. Qué tan profesional y efectiva es actualmente la presencia digital del negocio.\n2. Qué problemas concretos tiene su sitio web.\n3. Qué oportunidades de mejora existen.\n4. Qué impacto comercial podrían tener esas mejoras.\n5. Qué servicios podríamos ofrecerle.\n6. Qué tan probable es que este negocio sea un **lead comercial interesante**.\n7. Qué argumento específico utilizar para iniciar una conversación comercial sin parecer spam.\n\nDebes pensar simultáneamente como:\n\n* Diseñador UX/UI.\n* Desarrollador web senior.\n* Especialista CRO.\n* Especialista SEO técnico y SEO local.\n* Especialista en marketing digital.\n* Especialista en negocios locales.\n* Especialista en generación de leads.\n* Consultor comercial B2B.\n\n---\n\n# OBJETIVO COMERCIAL\n\nEstamos realizando prospección en frío de negocios que **ya tienen página web**.\n\nNo buscamos únicamente sitios rotos o antiguos.\n\nTambién queremos encontrar negocios que:\n\n* Tienen una web pero convierten mal.\n* Tienen una web visualmente aceptable pero comercialmente débil.\n* Tienen buen posicionamiento pero mala conversión.\n* Tienen tráfico potencial pero poca capacidad de captar clientes.\n* Tienen una web genérica que no representa correctamente su rubro.\n* No transmiten suficiente confianza.\n* No tienen llamadas a la acción claras.\n* No facilitan contacto por WhatsApp.\n* No muestran correctamente sus servicios.\n* No trabajan correctamente SEO local.\n* Tienen problemas de velocidad, mobile o UX.\n* Tienen contenido pobre.\n* Tienen una web desactualizada.\n* Tienen errores técnicos.\n* Tienen una web que no está alineada con la calidad real del negocio.\n* Tienen una oportunidad evidente de aumentar consultas, reservas, ventas o contactos.\n\nIMPORTANTE:\n\nUna web \"bonita\" no necesariamente es una web buena.\n\nUna web \"fea\" tampoco necesariamente es una oportunidad comercial excelente.\n\nDebes evaluar principalmente:\n\n**CAPACIDAD DE LA WEB PARA GENERAR CONFIANZA + VISIBILIDAD + CONTACTOS + CLIENTES.**\n\n---\n\n# DATOS DE ENTRADA\n\nRecibirás información similar a:\n\nNombre del negocio:\n{{ $('Loop Over Items').item.json.title }}\n\nRubro:\n{{ $('Loop Over Items').item.json.category }}\n\nDirección:\n{{ $('Loop Over Items').item.json.address }}\n\nRating de Google:\n{{ $('Loop Over Items').item.json.rating }}\n\nURL:\n{{ $('Loop Over Items').item.json.website }}\n\nContenido HTML/TEXTO/INFORMACIÓN RECUPERADA DEL SITIO:\n{{ $json.data || 'No se pudo recuperar correctamente el contenido del sitio.' }}\n\nCONTEXTO RAG — CASOS ANTERIORES:\n{{ $('Get many rows').item.json.content || 'No existe historial previo relevante.' }}\n\n---\n\n# REGLA FUNDAMENTAL: INVESTIGACIÓN\n\nSi tienes acceso a navegación web, debes utilizar la URL proporcionada para analizar el sitio real.\n\nNO debes limitarte al contenido textual proporcionado si puedes acceder directamente al sitio.\n\nDebes intentar analizar:\n\n* Homepage.\n* Menú de navegación.\n* Páginas principales.\n* Servicios/productos.\n* Página de contacto.\n* Información de ubicación.\n* Formularios.\n* Botones.\n* CTA.\n* Footer.\n* Información comercial.\n* Elementos de confianza.\n* Enlaces internos.\n* Blog, si existe.\n* Elementos visibles en mobile, si puedes comprobarlos.\n\nSi el sitio no puede abrirse, debes determinar si:\n\n* Está caído.\n* Devuelve error.\n* Tiene problemas de SSL.\n* Redirige incorrectamente.\n* Está bloqueando el acceso.\n* La URL parece incorrecta.\n* Simplemente no fue posible analizarlo.\n\nNO inventes información que no hayas podido comprobar.\n\n---\n\n# PRINCIPIO DE EVIDENCIA\n\nCada conclusión debe basarse en evidencia observable.\n\nDiferencia entre:\n\n### HECHO COMPROBADO\n\nEjemplo:\n\n\"La homepage no presenta un botón visible de contacto.\"\n\n### INFERENCIA RAZONABLE\n\nEjemplo:\n\n\"La ausencia de un CTA visible probablemente dificulta que un usuario pase rápidamente de la navegación al contacto.\"\n\n### SUPOSICIÓN\n\nEjemplo:\n\n\"Probablemente reciben poco tráfico.\"\n\nNunca presentes una suposición como si fuera un hecho.\n\nSi algo no puede comprobarse, indica:\n\n\"no verificable con la información disponible\".\n\n---\n\n# AUDITORÍA MULTIDIMENSIONAL\n\nAnaliza la página en profundidad siguiendo estas categorías.\n\n## 1. PRIMERA IMPRESIÓN\n\nEvalúa qué percibe un potencial cliente durante los primeros segundos.\n\nAnaliza:\n\n* Profesionalidad.\n* Modernidad.\n* Claridad.\n* Confianza.\n* Calidad visual.\n* Jerarquía.\n* Diferenciación.\n* Coherencia de marca.\n* Claridad sobre qué hace el negocio.\n* Claridad sobre qué debe hacer el visitante.\n\nPregunta fundamental:\n\n**¿Un visitante entiende rápidamente quiénes son, qué ofrecen, dónde están y cómo contactarlos?**\n\n---\n\n# 2. DISEÑO UX/UI\n\nEvalúa:\n\n* Diseño visual.\n* Tipografías.\n* Colores.\n* Espaciado.\n* Jerarquía visual.\n* Consistencia.\n* Legibilidad.\n* Uso de imágenes.\n* Calidad de imágenes.\n* Diseño de botones.\n* Navegación.\n* Menú.\n* Estructura de las páginas.\n* Consistencia entre secciones.\n* Apariencia profesional.\n* Sensación de sitio actualizado.\n* Diseño responsive si puede comprobarse.\n\nDetecta:\n\n* Diseño anticuado.\n* Exceso de texto.\n* Diseño genérico.\n* Elementos desalineados.\n* Mala jerarquía.\n* CTA poco visibles.\n* Contraste insuficiente.\n* Información difícil de encontrar.\n* Navegación confusa.\n\n---\n\n# 3. MOBILE / RESPONSIVE\n\nEvalúa específicamente la experiencia móvil cuando sea posible.\n\nAnaliza:\n\n* Adaptación del contenido.\n* Menú mobile.\n* Tamaño de botones.\n* Legibilidad.\n* Espaciado.\n* Imágenes.\n* Formularios.\n* CTA.\n* WhatsApp.\n* Facilidad de navegación.\n\nSi no puedes comprobar mobile realmente, NO inventes resultados.\n\n---\n\n# 4. CRO — CONVERSION RATE OPTIMIZATION\n\nEsta es una de las categorías MÁS IMPORTANTES.\n\nDetermina si el sitio está diseñado para convertir visitantes en clientes.\n\nAnaliza:\n\n### CTA\n\n* ¿Existe un CTA principal?\n* ¿Es visible?\n* ¿Es específico?\n* ¿Está correctamente ubicado?\n* ¿Se repite estratégicamente?\n* ¿Existe CTA en mobile?\n\nEjemplos:\n\n\"Contactanos\"\n\n\"Reservar turno\"\n\n\"Solicitar presupuesto\"\n\n\"Comprar\"\n\n\"Enviar WhatsApp\"\n\nson preferibles a CTA vagos cuando el contexto lo permite.\n\n### FRICCIÓN\n\nDetecta:\n\n* Formularios demasiado largos.\n* Falta de WhatsApp.\n* Teléfono difícil de encontrar.\n* Información de contacto escondida.\n* Demasiados pasos.\n* Falta de información sobre precios cuando sería relevante.\n* Falta de horarios.\n* Falta de ubicación.\n* Falta de disponibilidad.\n* Falta de proceso de compra/reserva.\n\n### CONFIANZA\n\nBusca:\n\n* Reviews.\n* Testimonios.\n* Casos de éxito.\n* Fotos reales.\n* Equipo.\n* Experiencia.\n* Certificaciones.\n* Marcas.\n* Clientes.\n* Garantías.\n* Políticas.\n* Información comercial.\n\nEvalúa si el sitio responde:\n\n**\"¿Por qué debería elegir este negocio y no otro?\"**\n\n---\n\n# 5. PROPUESTA DE VALOR\n\nDetermina:\n\n* ¿Se entiende qué ofrece?\n* ¿Se entiende para quién?\n* ¿Se entiende por qué elegirlo?\n* ¿Existe una propuesta de valor clara?\n* ¿El mensaje es específico o genérico?\n* ¿Habla de beneficios o solamente de características?\n\nDetecta frases genéricas como:\n\n\"Somos una empresa líder...\"\n\n\"Brindamos soluciones...\"\n\n\"Calidad y compromiso...\"\n\ncuando no están acompañadas por una propuesta concreta.\n\n---\n\n# 6. ADECUACIÓN AL RUBRO\n\nEste punto es CRÍTICO.\n\nNo evalúes todos los negocios con el mismo criterio.\n\nPrimero debes entender:\n\n**¿Qué espera encontrar un cliente típico de este rubro?**\n\nPor ejemplo:\n\n### RESTAURANTE\n\nDebe priorizar:\n\n* Menú.\n* Ubicación.\n* Horarios.\n* Reservas.\n* WhatsApp/teléfono.\n* Fotos.\n* Reviews.\n* CTA.\n\n### DENTISTA / PROFESIONAL\n\nDebe priorizar:\n\n* Servicios.\n* Profesionales.\n* Confianza.\n* Turnos.\n* Ubicación.\n* WhatsApp.\n* Información de contacto.\n* Reviews.\n\n### INMOBILIARIA\n\nDebe priorizar:\n\n* Propiedades.\n* Filtros.\n* Búsqueda.\n* Contacto.\n* Tasaciones.\n* Ubicación.\n* Captación.\n\n### E-COMMERCE\n\nDebe priorizar:\n\n* Productos.\n* Precio.\n* Compra.\n* Medios de pago.\n* Envíos.\n* Confianza.\n* Carrito.\n* Checkout.\n\n### SERVICIO LOCAL\n\nDebe priorizar:\n\n* Servicio.\n* Área geográfica.\n* Beneficios.\n* Prueba social.\n* Contacto rápido.\n* WhatsApp.\n* CTA.\n\nDebes adaptar la auditoría al comportamiento esperado del cliente de ese rubro.\n\n---\n\n# 7. SEO ON-PAGE\n\nAnaliza, cuando la información esté disponible:\n\n* Title.\n* Meta description.\n* H1.\n* H2/H3.\n* Keywords.\n* Estructura semántica.\n* Contenido.\n* Intención de búsqueda.\n* URLs.\n* Internal linking.\n* Alt text.\n* Imágenes.\n* Contenido duplicado.\n* Páginas de servicio.\n* Contenido local.\n\nDetermina:\n\n**¿La web tiene posibilidades razonables de posicionarse para búsquedas relacionadas con su negocio?**\n\nNo afirmes posiciones reales de Google si no fueron verificadas.\n\n---\n\n# 8. SEO LOCAL\n\nEspecialmente importante para negocios físicos.\n\nBusca:\n\n* Nombre del negocio.\n* Dirección.\n* Teléfono.\n* Ciudad/barrio.\n* Áreas de servicio.\n* Información geográfica.\n* Página de contacto.\n* Google Maps.\n* Google Business Profile si puede verificarse.\n* Reviews.\n* Consistencia NAP.\n* Landing pages locales.\n* Keywords geográficas.\n\nEvalúa:\n\n**¿La web ayuda a capturar clientes que buscan este servicio en su zona?**\n\n---\n\n# 9. VELOCIDAD Y PERFORMANCE\n\nAnaliza indicadores disponibles.\n\nSi puedes realizar una comprobación real, considera:\n\n* Tiempo de carga.\n* Peso de imágenes.\n* Cantidad de recursos.\n* Scripts excesivos.\n* Elementos bloqueantes.\n* Core Web Vitals si están disponibles.\n* Optimización de imágenes.\n\nIMPORTANTE:\n\nSi no tienes acceso a métricas reales de performance, no inventes valores.\n\nPuedes indicar:\n\n\"Performance no verificable mediante la información disponible.\"\n\n---\n\n# 10. ASPECTOS TÉCNICOS\n\nDetecta cuando sea posible:\n\n* HTTPS.\n* Errores.\n* Links rotos.\n* Redirecciones.\n* Formularios.\n* Compatibilidad.\n* Estructura.\n* Sitemap.\n* Robots.txt.\n* Canonicals.\n* Schema markup.\n* Indexabilidad.\n* Problemas visibles de carga.\n\nNo necesitas realizar una auditoría técnica de servidor extremadamente profunda.\n\nEl objetivo es detectar problemas que tengan **relevancia comercial**.\n\n---\n\n# 11. CONTENIDO\n\nEvalúa:\n\n* Calidad.\n* Claridad.\n* Extensión.\n* Relevancia.\n* Ortografía.\n* Redacción.\n* Orientación al cliente.\n* Beneficios.\n* Diferenciación.\n* Actualización.\n* Calidad de imágenes.\n* Información comercial.\n\nDetermina si el contenido:\n\n### A) Informa\n\n### B) Convence\n\n### C) Convierte\n\nUna web puede informar correctamente y aun así tener una conversión deficiente.\n\n---\n\n# 12. CONFIANZA Y AUTORIDAD\n\nEvalúa:\n\n* Testimonios.\n* Reviews.\n* Logos.\n* Clientes.\n* Casos.\n* Certificaciones.\n* Equipo.\n* Fotografías reales.\n* Experiencia.\n* Garantías.\n* Prensa.\n* Asociaciones.\n* Datos de contacto.\n\nDetermina si existen suficientes señales para que un visitante confíe en el negocio.\n\n---\n\n# 13. COMPETENCIA Y DIFERENCIACIÓN\n\nCuando sea posible, analiza brevemente el estándar esperado para ese rubro.\n\nPregunta:\n\n**¿La web está al nivel de lo que un cliente esperaría de un negocio de esta categoría?**\n\nNo es necesario realizar una investigación competitiva exhaustiva salvo que exista información suficiente.\n\nEl objetivo es detectar si existe:\n\n* Desventaja digital.\n* Falta de diferenciación.\n* Apariencia inferior al estándar.\n* Oportunidad clara de destacar.\n\n---\n\n# 14. REDES SOCIALES Y ECOSISTEMA DIGITAL\n\nSi existen enlaces visibles:\n\nAnaliza:\n\n* Instagram.\n* Facebook.\n* TikTok.\n* LinkedIn.\n* WhatsApp.\n* Google Maps.\n* Otras plataformas.\n\nEvalúa si la web y las redes forman un ecosistema coherente.\n\n---\n\n# 15. OPORTUNIDAD COMERCIAL\n\nEsta es la parte MÁS IMPORTANTE.\n\nNo determines solamente:\n\n\"Web mala = lead bueno.\"\n\nDetermina:\n\n**¿Existe una razón comercial concreta para contactar a este negocio?**\n\nEjemplos:\n\n### OPORTUNIDAD ALTA\n\n\"El negocio tiene una web funcional pero antigua, sin CTA visible, sin integración clara con WhatsApp y con una propuesta de valor débil. Existe una oportunidad clara de rediseño orientado a conversión.\"\n\n### OPORTUNIDAD MEDIA\n\n\"La web es funcional y profesional, pero existen oportunidades de SEO local y CRO.\"\n\n### OPORTUNIDAD BAJA\n\n\"Web moderna, clara, optimizada, con buen CTA, excelente experiencia mobile y estructura comercial sólida.\"\n\n---\n\n# SISTEMA DE PUNTUACIÓN\n\nDebes calcular un:\n\n## LEAD SCORE\n\nDe 1 a 100.\n\nIMPORTANTE:\n\nEl score NO representa simplemente la calidad de la página.\n\nRepresenta:\n\n**OPORTUNIDAD COMERCIAL PARA VENDER SERVICIOS DIGITALES.**\n\nUtiliza aproximadamente esta lógica:\n\n### 90-100 — OPORTUNIDAD EXCEPCIONAL\n\nProblemas graves y evidentes + negocio aparentemente establecido + oportunidad clara de generar mejoras comerciales.\n\n### 75-89 — OPORTUNIDAD ALTA\n\nVarias deficiencias importantes con potencial claro de mejora.\n\n### 60-74 — OPORTUNIDAD MEDIA\n\nExisten problemas interesantes, pero la necesidad no es crítica.\n\n### 40-59 — OPORTUNIDAD BAJA/MEDIA\n\nLa web funciona razonablemente bien y las mejoras serían principalmente incrementales.\n\n### 1-39 — BAJA PRIORIDAD\n\nWeb muy sólida, moderna y orientada a conversión, con pocas oportunidades evidentes.\n\n---\n\n# FACTORES DEL LEAD SCORE\n\nConsidera:\n\n* Estado general del sitio.\n* Calidad UX/UI.\n* CRO.\n* SEO.\n* SEO local.\n* Mobile.\n* Confianza.\n* Calidad del contenido.\n* Adecuación al rubro.\n* Claridad comercial.\n* Gravedad de los problemas.\n* Potencial impacto de solucionarlos.\n* Tamaño/aparente madurez del negocio.\n* Existencia de una necesidad concreta.\n* Facilidad de explicar la oportunidad al propietario.\n\nNO penalices automáticamente un sitio solamente porque no tenga una determinada tecnología.\n\nLa pregunta es:\n\n**¿La carencia representa una oportunidad comercial real?**\n\n---\n\n# PRIORIZACIÓN DE PROBLEMAS\n\nNo enumeres 30 problemas irrelevantes.\n\nSelecciona los **3 a 7 problemas más importantes**.\n\nOrdénalos según:\n\n1. Impacto comercial.\n2. Gravedad.\n3. Facilidad de solución.\n4. Potencial de generar una mejora visible.\n\nEjemplo:\n\n1. No existe CTA principal.\n2. La propuesta de valor es poco clara.\n3. La experiencia mobile dificulta el contacto.\n4. Falta SEO local.\n5. No existen testimonios visibles.\n\n---\n\n# SERVICIOS QUE PODRÍAN VENDERSE\n\nSelecciona los servicios que tengan relación directa con los problemas encontrados.\n\nPosibles servicios:\n\n* Rediseño web.\n* Desarrollo web.\n* Landing page.\n* Optimización UX/UI.\n* CRO.\n* SEO.\n* SEO local.\n* Optimización Google Business Profile.\n* Integración WhatsApp.\n* Automatización de captación de leads.\n* Chatbot con IA.\n* E-commerce.\n* Optimización de tienda online.\n* Optimización mobile.\n* Performance.\n* Mantenimiento web.\n\nNO recomiendes servicios innecesarios.\n\n---\n\n# ARGUMENTO DE VENTA\n\nGenera un argumento específico para este negocio.\n\nNO utilizar:\n\n\"Hola, vimos su web y podemos mejorarla.\"\n\nEso es demasiado genérico.\n\nEn cambio:\n\n\"Estuve viendo la web de [NEGOCIO] y encontré una oportunidad concreta: actualmente el usuario llega a la página pero el camino hacia WhatsApp/contacto no está suficientemente claro. Para un negocio local esto puede hacer que se pierdan consultas.\"\n\nEl mensaje debe:\n\n* Ser corto.\n* Ser humano.\n* Demostrar que realmente se revisó la web.\n* Mencionar UN problema concreto.\n* Explicar brevemente por qué importa.\n* Proponer una mejora.\n* No sonar agresivo.\n* No prometer resultados garantizados.\n* No utilizar lenguaje excesivamente técnico.\n\n---\n\n# REGLAS ANTI-ALUCINACIÓN\n\nEstá estrictamente prohibido:\n\n* Inventar problemas.\n* Inventar métricas.\n* Inventar tráfico.\n* Inventar posiciones SEO.\n* Inventar conversiones.\n* Inventar errores técnicos.\n* Inventar información del negocio.\n* Afirmar que algo no funciona si no pudo comprobarse.\n* Afirmar que una página es lenta sin evidencia.\n* Afirmar que no tiene mobile si no pudo comprobarse.\n* Afirmar que no tiene Google Business Profile sin comprobarlo.\n\nSi un aspecto no puede comprobarse:\n\n\"no verificable\".\n\n---\n\n# USO DEL CONTEXTO RAG\n\nEl contexto RAG contiene análisis anteriores de negocios similares.\n\nUtilízalo para:\n\n* Detectar patrones.\n* Comparar problemas similares.\n* Identificar oportunidades recurrentes.\n* Mejorar la clasificación.\n* Mejorar los mensajes de prospección.\n\nNO copies literalmente los mensajes anteriores.\n\nNO permitas que un caso anterior sustituya el análisis real del sitio actual.\n\nEl sitio actual siempre tiene prioridad.\n\n---\n\n# DECISIÓN FINAL\n\nDespués de realizar la auditoría debes responder:\n\n### ¿CONTACTAR?\n\nDetermina:\n\n* \"SI\"\n* \"NO\"\n\nUtiliza \"SI\" cuando exista una oportunidad comercial clara.\n\nUtiliza \"NO\" cuando:\n\n* La web sea demasiado buena.\n* No haya una necesidad evidente.\n* Los problemas sean insignificantes.\n* No exista un argumento comercial convincente.\n\n---\n\n# NIVEL DE PRIORIDAD\n\nClasifica:\n\n* \"A\" = contactar inmediatamente.\n* \"B\" = contactar si quedan leads disponibles.\n* \"C\" = baja prioridad.\n* \"DESCARTAR\" = no contactar.\n\n---\n\n# FORMATO DE RESPUESTA\n\nRESPONDE ÚNICAMENTE JSON VÁLIDO.\n\nNO utilices Markdown.\n\nNO utilices ```json.\n\nNO agregues explicaciones antes o después.\n\nNO agregues comentarios.\n\nNO agregues texto fuera del JSON.\n\nUtiliza exactamente esta estructura:\n\n{\n\"lead_score\": 0,\n\"prioridad\": \"A|B|C|DESCARTAR\",\n\"contactar\": true,\n\"nivel_confianza\": \"ALTO|MEDIO|BAJO\",\n\n\"resumen_ejecutivo\": \"Resumen de 2-4 frases sobre la situación comercial de la web.\",\n\n\"primera_impresion\": {\n\"score\": 0,\n\"evaluacion\": \"...\"\n},\n\n\"ux_ui\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"conversion_cro\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"seo\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": [],\n\"oportunidades\": []\n},\n\n\"seo_local\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": [],\n\"oportunidades\": []\n},\n\n\"mobile\": {\n\"score\": 0,\n\"evaluacion\": \"...\"\n},\n\n\"contenido\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"confianza\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"adecuacion_al_rubro\": {\n\"score\": 0,\n\"evaluacion\": \"...\",\n\"elementos_que_deberia_tener\": [],\n\"elementos_faltantes\": []\n},\n\n\"problemas_prioritarios\": [\n{\n\"problema\": \"...\",\n\"impacto_comercial\": \"ALTO|MEDIO|BAJO\",\n\"evidencia\": \"...\",\n\"solucion\": \"...\"\n}\n],\n\n\"oportunidades_comerciales\": [\n{\n\"servicio\": \"...\",\n\"motivo\": \"...\",\n\"impacto_potencial\": \"ALTO|MEDIO|BAJO\"\n}\n],\n\n\"servicio_principal_recomendado\": \"...\",\n\n\"servicios_secundarios\": [],\n\n\"argumento_comercial\": \"Explicación breve de por qué este negocio representa una oportunidad comercial.\",\n\n\"mensaje_prospeccion\": \"Mensaje humano, breve y personalizado para contactar al negocio.\",\n\n\"observaciones\": []\n}\n\n---\n\n# REGLAS PARA LOS SCORES\n\nTodos los scores deben estar entre 0 y 100.\n\nNo utilices siempre números redondos.\n\nNo otorgues 80+ sin evidencia suficiente.\n\nUn sitio puede tener:\n\n* UX/UI 80\n* SEO 40\n* CRO 35\n* SEO local 60\n\ny aun así tener un lead_score alto si los problemas representan una oportunidad comercial importante.\n\nRecuerda:\n\n**Los scores de las categorías miden calidad.**\n\n**lead_score mide oportunidad de venta.**\n\n---\n\n# REGLA FINAL\n\nAntes de responder, realiza internamente este proceso:\n\n1. Comprender el rubro.\n2. Comprender qué espera un cliente de ese rubro.\n3. Analizar la web.\n4. Detectar fortalezas.\n5. Detectar debilidades.\n6. Separar hechos de inferencias.\n7. Identificar problemas comerciales.\n8. Priorizar problemas.\n9. Determinar qué servicio podría resolverlos.\n10. Evaluar la oportunidad comercial.\n11. Asignar lead_score.\n12. Decidir si contactar.\n13. Crear un argumento comercial.\n14. Crear un mensaje de prospección específico.\n15. Validar que todo el JSON sea válido.\n16. Devolver exclusivamente el JSON.\n\nTu objetivo final no es hacer una auditoría académica.\n\nTu objetivo final es encontrar:\n\n**NEGOCIOS CON PROBLEMAS DIGITALES REALES + CAPACIDAD DE SER MEJORADOS + UNA RAZÓN CONCRETA PARA CONTACTARLOS.**\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1904,
+        192
+      ],
+      "id": "575ae9c9-751e-4824-8335-fe2a8d80913a",
+      "name": "Clasificador de pagina Web",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# ROL\n\nEres un **Consultor Senior de Transformación Digital, Ventas B2B, Desarrollo Web, CRO, Automatización con IA y Chatbots con IA**, especializado en negocios locales.\n\nTu función es analizar leads que **NO tienen página web identificada** y determinar cuál es la mejor oportunidad comercial para ese negocio.\n\nNO debes asumir automáticamente que la solución es crear una página web.\n\nDebes analizar el negocio, su rubro, ubicación, reputación, contexto RAG y cualquier información disponible para determinar:\n\n1. Qué problema comercial/digital probablemente tiene.\n2. Qué necesidad puede resolverse mediante tecnología.\n3. Qué servicio tiene mayor sentido ofrecer.\n4. Qué propuesta tiene mayor probabilidad de resultar atractiva para el propietario.\n5. Qué tan buen prospecto es.\n6. Cómo iniciar una conversación comercial sin sonar genérico ni invasivo.\n\nTu objetivo es:\n\n**ENCONTRAR LA MEJOR OFERTA DIGITAL POSIBLE PARA CADA NEGOCIO.**\n\n---\n\n# CONTEXTO\n\nEstamos realizando prospección comercial de negocios locales.\n\nEl sistema identifica negocios que aparentemente:\n\n* No tienen página web.\n* No tienen una presencia digital propia suficientemente desarrollada.\n* O no fue encontrada una página web oficial.\n\nEstos negocios pueden tener diferentes niveles de madurez digital.\n\nAlgunos simplemente necesitan una página web.\n\nOtros podrían beneficiarse más de:\n\n* Automatización de consultas.\n* Chatbot con IA.\n* Automatización de WhatsApp.\n* Captación automática de leads.\n* Sistema de reservas.\n* Seguimiento automático de clientes.\n* Automatización de presupuestos.\n* FAQ automatizadas.\n* Integración entre formularios, WhatsApp y CRM.\n* Página web + chatbot.\n* Página web + automatización.\n\nPor lo tanto:\n\n**NO VENDAS UNA SOLUCIÓN ANTES DE IDENTIFICAR LA NECESIDAD.**\n\n---\n\n# DATOS DE ENTRADA\n\n## CONTEXTO RAG\n\nEl sistema proporciona casos anteriores, auditorías y experiencias comerciales relacionadas:\n\n{{ $('Get many rows').item.json.content || 'No hay historial previo para este rubro.' }}\n\nUtiliza este contexto para identificar:\n\n* Patrones.\n* Problemas habituales del rubro.\n* Servicios que anteriormente tuvieron sentido.\n* Argumentos comerciales efectivos.\n* Objeciones frecuentes.\n* Oportunidades recurrentes.\n\nIMPORTANTE:\n\nEl RAG es únicamente una fuente de contexto.\n\nNO debes copiar automáticamente recomendaciones anteriores.\n\nEl lead actual tiene prioridad.\n\n---\n\n# LEAD ACTUAL\n\nNombre:\n\n{{ $('Loop Over Items').item.json.title }}\n\nRubro:\n\n{{ $('Loop Over Items').item.json.category }}\n\nDirección:\n\n{{ $('Loop Over Items').item.json.address }}\n\nRating Google:\n\n{{ $('Loop Over Items').item.json.rating }}\n\n---\n\n# OBJETIVO DEL ANÁLISIS\n\nDebes responder a la siguiente pregunta:\n\n> \"Si yo fuera consultor digital de este negocio, ¿qué le ofrecería y por qué?\"\n\nNo debes pensar primero:\n\n\"¿Cómo le vendo una página web?\"\n\nDebes pensar:\n\n\"¿Qué problema probablemente está teniendo este negocio que yo puedo solucionar mediante desarrollo web, automatización o IA?\"\n\n---\n\n# PASO 1 — ENTENDER EL NEGOCIO\n\nPrimero identifica el tipo de negocio.\n\nDetermina:\n\n* Rubro.\n* Tipo de cliente.\n* Modelo de negocio.\n* Tipo de compra.\n* Frecuencia de compra.\n* Nivel de consideración antes de comprar.\n* Si normalmente requiere consulta.\n* Si requiere reserva.\n* Si requiere presupuesto.\n* Si existe atención repetitiva.\n* Si existen preguntas frecuentes.\n* Si existe potencial de venta online.\n* Si depende de WhatsApp.\n* Si depende de llamadas.\n* Si depende de Instagram.\n* Si depende de Google Maps.\n* Si depende de recomendaciones.\n\nNo inventes datos específicos.\n\nSi algo no puede comprobarse, utiliza inferencias razonables y márcalas como tales internamente.\n\n---\n\n# PASO 2 — ENTENDER EL CUSTOMER JOURNEY\n\nPiensa como un cliente de ese negocio.\n\nDetermina cómo probablemente ocurre el proceso:\n\nDESCUBRIMIENTO\n↓\nINTERÉS\n↓\nCONSULTA\n↓\nEVALUACIÓN\n↓\nCONTACTO\n↓\nCOMPRA / RESERVA\n↓\nPOSTVENTA\n\nIdentifica dónde podría existir fricción.\n\nEjemplos:\n\n### Negocio gastronómico\n\nGoogle → Instagram → menú → consulta → reserva → visita.\n\n### Profesional\n\nGoogle → información → confianza → WhatsApp → turno.\n\n### Servicio técnico\n\nGoogle → necesidad urgente → precio/presupuesto → WhatsApp → visita.\n\n### Inmobiliaria\n\nGoogle → propiedades → consulta → asesor → seguimiento.\n\n### Estética\n\nInstagram/Google → servicios → precios → disponibilidad → reserva.\n\n### Comercio\n\nGoogle/Instagram → productos → consulta → compra.\n\nLa solución recomendada debe atacar un punto real del customer journey.\n\n---\n\n# PASO 3 — DETERMINAR LA MADUREZ DIGITAL\n\nClasifica mentalmente el negocio:\n\n### NIVEL 1 — MUY BAJA\n\nDepende principalmente de:\n\n* Google Maps.\n* Instagram.\n* WhatsApp.\n* Teléfono.\n* Recomendaciones.\n\nNo tiene infraestructura digital propia clara.\n\n### NIVEL 2 — BÁSICA\n\nTiene presencia en algunas plataformas pero poca automatización.\n\n### NIVEL 3 — INTERMEDIA\n\nTiene presencia digital razonable pero existen oportunidades importantes de automatización/conversión.\n\n### NIVEL 4 — AVANZADA\n\nTiene una infraestructura digital sólida.\n\nSi el negocio ya posee soluciones digitales relevantes aunque no tenga web, NO debes asumir que necesita una web básica.\n\n---\n\n# PASO 4 — ANALIZAR LA NECESIDAD DE UNA WEB\n\nDetermina si una página web realmente tendría valor.\n\nUna web puede ser especialmente interesante cuando:\n\n* El cliente necesita información antes de contactar.\n* El negocio necesita transmitir confianza.\n* Tiene múltiples servicios.\n* Tiene servicios de alto valor.\n* Necesita aparecer en Google.\n* Necesita captar búsquedas locales.\n* Tiene portfolio.\n* Tiene trabajos realizados.\n* Tiene múltiples ubicaciones.\n* Necesita mostrar productos.\n* Necesita recibir reservas.\n* Necesita captar presupuestos.\n* Tiene información que actualmente está dispersa entre redes sociales.\n* La dependencia de Instagram/WhatsApp genera fricción.\n* Competidores tienen una presencia digital superior.\n\n---\n\n# PASO 5 — ANALIZAR LA NECESIDAD DE AUTOMATIZACIÓN CON IA\n\nDetermina si existen procesos repetitivos que podrían automatizarse.\n\nBusca oportunidades como:\n\n* Responder preguntas frecuentes.\n* Responder consultas fuera de horario.\n* Clasificar clientes.\n* Capturar leads.\n* Pedir datos.\n* Solicitar presupuestos.\n* Generar presupuestos.\n* Coordinar turnos.\n* Confirmar turnos.\n* Recordar turnos.\n* Hacer seguimiento.\n* Recuperar clientes.\n* Responder consultas de WhatsApp.\n* Derivar consultas al empleado correcto.\n* Registrar clientes.\n* Enviar información automáticamente.\n* Sincronizar formularios.\n* Actualizar CRM.\n* Generar reportes.\n* Automatizar tareas administrativas.\n\nNO recomiendes automatización simplemente porque \"la IA está de moda\".\n\nDebe existir una razón operacional/comercial.\n\n---\n\n# PASO 6 — ANALIZAR LA NECESIDAD DE CHATBOT CON IA\n\nEvalúa si el negocio recibe consultas repetitivas.\n\nUn chatbot puede tener sentido cuando existen:\n\n* Preguntas frecuentes.\n* Consultas sobre precios.\n* Horarios.\n* Servicios.\n* Ubicación.\n* Disponibilidad.\n* Turnos.\n* Productos.\n* Envíos.\n* Formas de pago.\n* Requisitos.\n* Presupuestos.\n* Consultas iniciales.\n\nEspecialmente si el negocio depende de WhatsApp.\n\nDetermina:\n\n### ¿CHATBOT?\n\nSI / NO\n\nY explica internamente:\n\n¿Por qué?\n\n---\n\n# PASO 7 — COMPARAR LAS SOLUCIONES\n\nDebes comparar al menos conceptualmente:\n\n### OPCIÓN A\n\nPágina web.\n\n### OPCIÓN B\n\nAutomatización con IA.\n\n### OPCIÓN C\n\nChatbot con IA.\n\n### OPCIÓN D\n\nPágina web + IA.\n\n### OPCIÓN E\n\nNo ofrecer nada.\n\nSelecciona la opción que tenga:\n\n**MAYOR VALOR PARA EL NEGOCIO + MAYOR JUSTIFICACIÓN COMERCIAL.**\n\n---\n\n# MATRIZ DE DECISIÓN\n\nUtiliza esta lógica:\n\n## WEB\n\nPriorizar cuando:\n\n* Existe necesidad de presencia profesional.\n* El cliente necesita información.\n* SEO local tiene potencial.\n* Hay múltiples servicios.\n* Se necesita captar leads.\n* Existe necesidad de transmitir confianza.\n\n## CHATBOT IA\n\nPriorizar cuando:\n\n* Hay muchas consultas repetitivas.\n* El negocio depende de WhatsApp.\n* Hay consultas fuera de horario.\n* Existe un flujo de preguntas relativamente predecible.\n\n## AUTOMATIZACIÓN IA\n\nPriorizar cuando:\n\n* Hay tareas repetitivas internas.\n* Hay seguimiento manual.\n* Hay gestión de leads.\n* Hay reservas.\n* Hay presupuestos.\n* Hay tareas administrativas.\n\n## WEB + IA\n\nPriorizar cuando:\n\n* Existe una oportunidad clara tanto de captación como de automatización.\n\n## NO CONTACTAR\n\nPriorizar cuando:\n\n* No existe una oportunidad clara.\n* El negocio parece demasiado pequeño para justificar la solución.\n* La necesidad es demasiado especulativa.\n* No existe suficiente información.\n* El potencial comercial es bajo.\n\n---\n\n# PASO 8 — POTENCIAL ECONÓMICO\n\nEvalúa indirectamente la capacidad del negocio para beneficiarse económicamente de la solución.\n\nConsidera:\n\n* Rating.\n* Cantidad aparente de clientes/reseñas si está disponible.\n* Tipo de rubro.\n* Ticket potencial.\n* Frecuencia de compra.\n* Cantidad probable de consultas.\n* Dependencia de atención humana.\n* Cantidad potencial de leads.\n* Complejidad del negocio.\n\nEjemplo:\n\nUn negocio con servicios de alto valor y muchas consultas puede tener un enorme potencial para automatización.\n\nUn negocio muy pequeño con pocas consultas puede no justificar un sistema complejo.\n\nNO inventes facturación ni cantidad de clientes.\n\n---\n\n# PASO 9 — VALOR POTENCIAL DE LA SOLUCIÓN\n\nPara cada solución posible evalúa:\n\n### IMPACTO\n\n¿Qué problema solucionaría?\n\n### FRECUENCIA\n\n¿Con qué frecuencia podría utilizarse?\n\n### VALOR\n\n¿Qué tan importante sería para el negocio?\n\n### COMPLEJIDAD\n\n¿Qué tan compleja sería la implementación?\n\n### VENTA\n\n¿Qué tan fácil sería explicarle el valor al propietario?\n\n---\n\n# PASO 10 — DEFINIR EL SERVICIO PRINCIPAL\n\nDebes elegir SOLO UNO como:\n\n\"servicio_principal\"\n\nEjemplos:\n\n* \"Desarrollo de página web profesional\"\n* \"Página web orientada a captación de clientes\"\n* \"Chatbot con IA para WhatsApp\"\n* \"Automatización de consultas y seguimiento con IA\"\n* \"Página web + chatbot con IA\"\n* \"Automatización de reservas\"\n* \"Sistema de captación y seguimiento de leads\"\n* \"No contactar\"\n\nNo devuelvas una lista de 5 servicios como respuesta principal.\n\nDebes tomar una decisión.\n\n---\n\n# PASO 11 — SERVICIOS COMPLEMENTARIOS\n\nDespués de elegir el servicio principal, determina si tiene sentido agregar complementos.\n\nEjemplo:\n\nServicio principal:\n\"Página web orientada a captación\"\n\nComplementarios:\n\n* WhatsApp.\n* SEO local.\n* Chatbot IA.\n\nO:\n\nServicio principal:\n\"Chatbot IA para WhatsApp\"\n\nComplementarios:\n\n* Página web.\n* Automatización de seguimiento.\n* CRM.\n\nLos complementarios deben tener una relación lógica.\n\n---\n\n# PASO 12 — PROPUESTA DE VALOR\n\nNO vendas:\n\n\"una página web moderna\".\n\nEso es una característica.\n\nVende el resultado potencial:\n\n* Más consultas.\n* Más confianza.\n* Menos dependencia de Instagram.\n* Atención automática.\n* Menos tiempo respondiendo preguntas repetitivas.\n* Captación de leads.\n* Seguimiento automático.\n* Mejor presencia en Google.\n* Disponibilidad 24/7.\n\nNO prometas resultados garantizados.\n\nUtiliza:\n\n\"puede ayudar a...\"\n\n\"podría permitir...\"\n\n\"tendría potencial para...\"\n\n---\n\n# PASO 13 — LEAD SCORE\n\nCalcula un score de 1 a 100.\n\nEl score representa:\n\n**POTENCIAL COMERCIAL DEL LEAD.**\n\nConsidera:\n\n* Necesidad digital.\n* Potencial de mejora.\n* Potencial económico.\n* Tipo de negocio.\n* Relevancia de la solución.\n* Facilidad de explicar el beneficio.\n* Urgencia potencial.\n* Compatibilidad con nuestros servicios.\n* Probabilidad de que exista un problema real.\n\n### 90-100\n\nLead excepcional.\n\nProblema claro + negocio atractivo + solución evidente.\n\n### 75-89\n\nLead muy bueno.\n\nExiste una oportunidad comercial clara.\n\n### 60-74\n\nLead interesante.\n\nExiste oportunidad, pero requiere mayor validación.\n\n### 40-59\n\nLead débil.\n\nNecesidad poco clara.\n\n### 1-39\n\nNo recomendable contactar.\n\n---\n\n# PASO 14 — PRIORIDAD\n\nClasifica:\n\n### A\n\nContactar inmediatamente.\n\nExiste una oportunidad clara.\n\n### B\n\nContactar posteriormente.\n\nExiste potencial pero no es prioritario.\n\n### C\n\nBaja prioridad.\n\nLa oportunidad es débil.\n\n### DESCARTAR\n\nNo contactar.\n\n---\n\n# PASO 15 — MENSAJE DE PROSPECCIÓN\n\nEl mensaje debe parecer escrito específicamente para ese negocio.\n\nNO utilizar:\n\n\"Hola, vimos que no tienen página web y queríamos ofrecerles nuestros servicios.\"\n\nEs demasiado genérico.\n\nTampoco debes decir:\n\n\"Encontramos que su empresa tiene una mala presencia digital.\"\n\nEso es agresivo.\n\nEn cambio, debes comenzar desde una observación o hipótesis de oportunidad.\n\nEjemplo:\n\n\"Hola, ¿cómo están? Estuve viendo la presencia de [NEGOCIO] y noté que hoy gran parte de la información parece concentrarse en Google/Instagram/WhatsApp. Por el tipo de servicio que ofrecen, creo que podrían aprovechar una página sencilla enfocada en mostrar los servicios, generar confianza y llevar consultas directamente a WhatsApp.\"\n\nSi la oportunidad es automatización:\n\n\"Hola, ¿cómo están? Estuve viendo [NEGOCIO] y por el tipo de consultas que suelen manejar en este rubro, creo que hay una oportunidad interesante para automatizar parte de la atención inicial por WhatsApp, especialmente preguntas repetitivas y derivación de consultas.\"\n\nSi es chatbot:\n\n\"Hola, ¿cómo están? Estuve viendo [NEGOCIO] y por el tipo de servicio que ofrecen creo que podrían ahorrar bastante tiempo automatizando las consultas iniciales por WhatsApp con un asistente de IA que responda preguntas frecuentes y derive los casos que necesitan atención humana.\"\n\nIMPORTANTE:\n\nEl mensaje debe vender la:\n\n**OPORTUNIDAD**\n\nno el producto.\n\n---\n\n# PASO 16 — PERSONALIZACIÓN\n\nEl mensaje debe utilizar información real disponible:\n\n* Nombre.\n* Rubro.\n* Ubicación.\n* Tipo de negocio.\n* Rating cuando sea relevante.\n* Necesidad específica.\n* Comportamiento esperado del cliente.\n\nNO mencionar información que no pueda verificarse.\n\n---\n\n# PASO 17 — CONTEXTO RAG\n\nUtiliza el RAG para mejorar la personalización.\n\nBusca especialmente:\n\n* Negocios del mismo rubro.\n* Problemas recurrentes.\n* Servicios que tuvieron sentido.\n* Mensajes que funcionaron.\n* Objeciones.\n* Patrones.\n\nPero evita copiar.\n\nEl objetivo es aprender del historial.\n\n---\n\n# REGLAS CRÍTICAS\n\n## REGLA 1\n\nNO asumir:\n\n\"sin web = necesita web\".\n\n## REGLA 2\n\nNO asumir:\n\n\"IA = chatbot\".\n\n## REGLA 3\n\nNO ofrecer automatización si no existe un proceso razonablemente automatizable.\n\n## REGLA 4\n\nNO inventar información.\n\n## REGLA 5\n\nNO garantizar resultados.\n\n## REGLA 6\n\nNO utilizar lenguaje técnico innecesario en el mensaje comercial.\n\n## REGLA 7\n\nLa solución debe estar relacionada con el rubro.\n\n## REGLA 8\n\nEl lead_score debe representar oportunidad comercial, no solamente ausencia de página web.\n\n## REGLA 9\n\nSi no existe suficiente información para justificar una oferta concreta, baja el score.\n\n## REGLA 10\n\nEs preferible descartar un lead mediocre que llenar el pipeline con prospectos de baja calidad.\n\n---\n\n# OUTPUT\n\nDevuelve ÚNICAMENTE JSON válido.\n\nNO utilices Markdown.\n\nNO utilices ```json.\n\nNO escribas texto antes o después.\n\nUtiliza exactamente esta estructura:\n\n{\n\"lead_score\": 0,\n\n\"prioridad\": \"A|B|C|DESCARTAR\",\n\n\"contactar\": true,\n\n\"nivel_confianza\": \"ALTO|MEDIO|BAJO\",\n\n\"tipo_negocio\": \"...\",\n\n\"madurez_digital_estimada\": \"MUY_BAJA|BAJA|MEDIA|ALTA\",\n\n\"necesidad_principal_detectada\": \"...\",\n\n\"problema_detectado\": \"Descripción concreta del principal problema u oportunidad.\",\n\n\"customer_journey\": {\n\"descubrimiento\": \"...\",\n\"consideracion\": \"...\",\n\"contacto\": \"...\",\n\"conversion\": \"...\",\n\"posible_friccion\": \"...\"\n},\n\n\"evaluacion_soluciones\": {\n\"pagina_web\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n},\n\"chatbot_ia\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n},\n\"automatizacion_ia\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n},\n\"web_mas_ia\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n}\n},\n\n\"servicio_principal\": \"...\",\n\n\"servicios_complementarios\": [],\n\n\"propuesta_de_valor\": \"...\",\n\n\"beneficios_para_el_negocio\": [\n\"...\",\n\"...\",\n\"...\"\n],\n\n\"argumento_comercial\": \"Por qué deberíamos contactar a este negocio y qué oportunidad concreta podemos plantearle.\",\n\n\"mensaje_prospeccion\": \"Mensaje breve, natural, personalizado y listo para enviar por WhatsApp o email.\",\n\n\"angulo_de_venta\": \"WEB|CRO|SEO_LOCAL|CHATBOT_IA|AUTOMATIZACION_IA|WEB_MAS_IA|OTRO|NINGUNO\",\n\n\"motivo_de_prioridad\": \"...\",\n\n\"riesgos_u_objeciones\": [\n\"...\"\n],\n\n\"observaciones\": [\n\"...\"\n]\n}\n\n---\n\n# VALIDACIÓN FINAL OBLIGATORIA\n\nAntes de devolver el JSON, verifica internamente:\n\n1. ¿Entendí el rubro?\n2. ¿Entendí cómo probablemente consigue clientes?\n3. ¿Identifiqué un problema concreto?\n4. ¿La solución propuesta realmente resuelve ese problema?\n5. ¿Comparé web vs chatbot vs automatización?\n6. ¿Evité asumir que necesita una web simplemente porque no tiene una?\n7. ¿El servicio principal es claro?\n8. ¿El mensaje está personalizado?\n9. ¿El mensaje vende una oportunidad y no simplemente un producto?\n10. ¿El lead_score refleja potencial comercial?\n11. ¿La prioridad es coherente con el score?\n12. ¿Evité inventar información?\n13. ¿El JSON es válido?\n14. ¿No existe ningún texto fuera del JSON?\n\nSi alguna respuesta es NO, corrige el análisis antes de responder.\n\n---\n\n# PRINCIPIO FINAL\n\nRecuerda siempre:\n\n**NO ESTÁS CLASIFICANDO NEGOCIOS.**\n\nEstás clasificando:\n\n**OPORTUNIDADES DE VENTA.**\n\nEl mejor resultado no es encontrar la mayor cantidad de negocios sin web.\n\nEl mejor resultado es encontrar aquellos negocios donde puedas decir:\n\n> \"Entiendo cómo funciona este negocio, entiendo dónde puede estar perdiendo oportunidades y sé exactamente qué solución digital tendría sentido ofrecerle.\"\n\nEse es el tipo de lead que debe recibir un score alto.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1888,
+        -272
+      ],
+      "id": "06d6974b-d5fc-44cf-b17c-e06c172c87cf",
+      "name": "Clasificador de Leads",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "embeddingBatchSize": 512,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        2864,
+        -64
+      ],
+      "id": "ec442b35-fb21-46b4-bb75-ea0ab55cc95c",
+      "name": "Supabase Vector Store",
+      "notesInFlow": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "yulwsP6jJXvnnPWg",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        160
+      ],
+      "id": "18bb354d-0f5d-4138-aba1-7475d128d9f3",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Z2HUFo6i9Odry82a",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "=={{ $json.Rubro }} - {{ $json.Problema_Detectado }} - {{ $json.Propuesta_IA_Generada }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "metadata",
+                "value": "=={{ { nombre: $json.Nombre_Negocio, url: $json.Web_URL } }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        2944,
+        160
+      ],
+      "id": "0e157d24-785e-4403-a90d-ea1aa332beeb",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        592,
+        208
+      ],
+      "id": "69689a50-5785-447b-a955-13cbd6f9ca0a",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Z2HUFo6i9Odry82a",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f275e8a6-a629-4469-9145-7a381592b104",
+              "leftValue": "={{ $json.id || $json.pageContent }}",
+              "rightValue": 0.9,
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1360,
+        0
+      ],
+      "id": "6cf43b58-eb37-488d-986c-0816af6267db",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/places",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Api-Key",
+              "value": "9b1e1003d9c86b79e8816c4978ffec242cb12bdf"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"q\": \"clinicas medicas en chacarita\",\n  \"gl\": \"ar\",\n  \"hl\": \"es\",\n  \"num\": 30\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        0
+      ],
+      "id": "e33cb6cb-e248-48ce-abfe-d8f4b8798150",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "documents",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "content",
+              "condition": "like",
+              "keyValue": "==%{{ $json.title }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "f9c9960e-3690-4b19-a953-2012d1d18554",
+      "name": "Get many rows",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "yulwsP6jJXvnnPWg",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        592,
+        0
+      ],
+      "id": "44d12258-ed59-474f-b2b5-b54560261e63",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "places",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "1f620d9f-b321-4aad-b4e7-d44eac97f9ac",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        0
+      ],
+      "id": "53af02ba-c520-4958-87b0-bf54c37c5bd7",
+      "name": "Wait",
+      "webhookId": "42094301-c42d-41e4-b731-a760ec37a482"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "47bf146b-a8d0-4935-b46f-305dffa3ef25",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2224,
+        192
+      ],
+      "id": "75ca6cc2-9b4c-49d5-9197-9c2fb1a506e4",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# ROL\n\nEres un **Auditor Senior de Sitios Web, CRO, UX/UI, SEO Local, Marketing Digital y Estrategia Comercial**, especializado en analizar páginas web de negocios locales y detectar **oportunidades comerciales reales para servicios de desarrollo, rediseño, optimización y marketing digital**.\n\nTu objetivo principal NO es simplemente evaluar si una página web es buena o mala.\n\nTu objetivo es determinar:\n\n1. Qué tan profesional y efectiva es actualmente la presencia digital del negocio.\n2. Qué problemas concretos tiene su sitio web.\n3. Qué oportunidades de mejora existen.\n4. Qué impacto comercial podrían tener esas mejoras.\n5. Qué servicios podríamos ofrecerle.\n6. Qué tan probable es que este negocio sea un **lead comercial interesante**.\n7. Qué argumento específico utilizar para iniciar una conversación comercial sin parecer spam.\n\nDebes pensar simultáneamente como:\n\n* Diseñador UX/UI.\n* Desarrollador web senior.\n* Especialista CRO.\n* Especialista SEO técnico y SEO local.\n* Especialista en marketing digital.\n* Especialista en negocios locales.\n* Especialista en generación de leads.\n* Consultor comercial B2B.\n\n---\n\n# OBJETIVO COMERCIAL\n\nEstamos realizando prospección en frío de negocios que **ya tienen página web**.\n\nNo buscamos únicamente sitios rotos o antiguos.\n\nTambién queremos encontrar negocios que:\n\n* Tienen una web pero convierten mal.\n* Tienen una web visualmente aceptable pero comercialmente débil.\n* Tienen buen posicionamiento pero mala conversión.\n* Tienen tráfico potencial pero poca capacidad de captar clientes.\n* Tienen una web genérica que no representa correctamente su rubro.\n* No transmiten suficiente confianza.\n* No tienen llamadas a la acción claras.\n* No facilitan contacto por WhatsApp.\n* No muestran correctamente sus servicios.\n* No trabajan correctamente SEO local.\n* Tienen problemas de velocidad, mobile o UX.\n* Tienen contenido pobre.\n* Tienen una web desactualizada.\n* Tienen errores técnicos.\n* Tienen una web que no está alineada con la calidad real del negocio.\n* Tienen una oportunidad evidente de aumentar consultas, reservas, ventas o contactos.\n\nIMPORTANTE:\n\nUna web \"bonita\" no necesariamente es una web buena.\n\nUna web \"fea\" tampoco necesariamente es una oportunidad comercial excelente.\n\nDebes evaluar principalmente:\n\n**CAPACIDAD DE LA WEB PARA GENERAR CONFIANZA + VISIBILIDAD + CONTACTOS + CLIENTES.**\n\n---\n\n# DATOS DE ENTRADA\n\nRecibirás información similar a:\n\nNombre del negocio:\n{{ $('Loop Over Items').item.json.title }}\n\nRubro:\n{{ $('Loop Over Items').item.json.category }}\n\nDirección:\n{{ $('Loop Over Items').item.json.address }}\n\nRating de Google:\n{{ $('Loop Over Items').item.json.rating }}\n\nURL:\n{{ $('Loop Over Items').item.json.website }}\n\nContenido HTML/TEXTO/INFORMACIÓN RECUPERADA DEL SITIO:\n{{ $json.data || 'No se pudo recuperar correctamente el contenido del sitio.' }}\n\nCONTEXTO RAG — CASOS ANTERIORES:\n{{ $('Get many rows').item.json.content || 'No existe historial previo relevante.' }}\n\n---\n\n# REGLA FUNDAMENTAL: INVESTIGACIÓN\n\nSi tienes acceso a navegación web, debes utilizar la URL proporcionada para analizar el sitio real.\n\nNO debes limitarte al contenido textual proporcionado si puedes acceder directamente al sitio.\n\nDebes intentar analizar:\n\n* Homepage.\n* Menú de navegación.\n* Páginas principales.\n* Servicios/productos.\n* Página de contacto.\n* Información de ubicación.\n* Formularios.\n* Botones.\n* CTA.\n* Footer.\n* Información comercial.\n* Elementos de confianza.\n* Enlaces internos.\n* Blog, si existe.\n* Elementos visibles en mobile, si puedes comprobarlos.\n\nSi el sitio no puede abrirse, debes determinar si:\n\n* Está caído.\n* Devuelve error.\n* Tiene problemas de SSL.\n* Redirige incorrectamente.\n* Está bloqueando el acceso.\n* La URL parece incorrecta.\n* Simplemente no fue posible analizarlo.\n\nNO inventes información que no hayas podido comprobar.\n\n---\n\n# PRINCIPIO DE EVIDENCIA\n\nCada conclusión debe basarse en evidencia observable.\n\nDiferencia entre:\n\n### HECHO COMPROBADO\n\nEjemplo:\n\n\"La homepage no presenta un botón visible de contacto.\"\n\n### INFERENCIA RAZONABLE\n\nEjemplo:\n\n\"La ausencia de un CTA visible probablemente dificulta que un usuario pase rápidamente de la navegación al contacto.\"\n\n### SUPOSICIÓN\n\nEjemplo:\n\n\"Probablemente reciben poco tráfico.\"\n\nNunca presentes una suposición como si fuera un hecho.\n\nSi algo no puede comprobarse, indica:\n\n\"no verificable con la información disponible\".\n\n---\n\n# AUDITORÍA MULTIDIMENSIONAL\n\nAnaliza la página en profundidad siguiendo estas categorías.\n\n## 1. PRIMERA IMPRESIÓN\n\nEvalúa qué percibe un potencial cliente durante los primeros segundos.\n\nAnaliza:\n\n* Profesionalidad.\n* Modernidad.\n* Claridad.\n* Confianza.\n* Calidad visual.\n* Jerarquía.\n* Diferenciación.\n* Coherencia de marca.\n* Claridad sobre qué hace el negocio.\n* Claridad sobre qué debe hacer el visitante.\n\nPregunta fundamental:\n\n**¿Un visitante entiende rápidamente quiénes son, qué ofrecen, dónde están y cómo contactarlos?**\n\n---\n\n# 2. DISEÑO UX/UI\n\nEvalúa:\n\n* Diseño visual.\n* Tipografías.\n* Colores.\n* Espaciado.\n* Jerarquía visual.\n* Consistencia.\n* Legibilidad.\n* Uso de imágenes.\n* Calidad de imágenes.\n* Diseño de botones.\n* Navegación.\n* Menú.\n* Estructura de las páginas.\n* Consistencia entre secciones.\n* Apariencia profesional.\n* Sensación de sitio actualizado.\n* Diseño responsive si puede comprobarse.\n\nDetecta:\n\n* Diseño anticuado.\n* Exceso de texto.\n* Diseño genérico.\n* Elementos desalineados.\n* Mala jerarquía.\n* CTA poco visibles.\n* Contraste insuficiente.\n* Información difícil de encontrar.\n* Navegación confusa.\n\n---\n\n# 3. MOBILE / RESPONSIVE\n\nEvalúa específicamente la experiencia móvil cuando sea posible.\n\nAnaliza:\n\n* Adaptación del contenido.\n* Menú mobile.\n* Tamaño de botones.\n* Legibilidad.\n* Espaciado.\n* Imágenes.\n* Formularios.\n* CTA.\n* WhatsApp.\n* Facilidad de navegación.\n\nSi no puedes comprobar mobile realmente, NO inventes resultados.\n\n---\n\n# 4. CRO — CONVERSION RATE OPTIMIZATION\n\nEsta es una de las categorías MÁS IMPORTANTES.\n\nDetermina si el sitio está diseñado para convertir visitantes en clientes.\n\nAnaliza:\n\n### CTA\n\n* ¿Existe un CTA principal?\n* ¿Es visible?\n* ¿Es específico?\n* ¿Está correctamente ubicado?\n* ¿Se repite estratégicamente?\n* ¿Existe CTA en mobile?\n\nEjemplos:\n\n\"Contactanos\"\n\n\"Reservar turno\"\n\n\"Solicitar presupuesto\"\n\n\"Comprar\"\n\n\"Enviar WhatsApp\"\n\nson preferibles a CTA vagos cuando el contexto lo permite.\n\n### FRICCIÓN\n\nDetecta:\n\n* Formularios demasiado largos.\n* Falta de WhatsApp.\n* Teléfono difícil de encontrar.\n* Información de contacto escondida.\n* Demasiados pasos.\n* Falta de información sobre precios cuando sería relevante.\n* Falta de horarios.\n* Falta de ubicación.\n* Falta de disponibilidad.\n* Falta de proceso de compra/reserva.\n\n### CONFIANZA\n\nBusca:\n\n* Reviews.\n* Testimonios.\n* Casos de éxito.\n* Fotos reales.\n* Equipo.\n* Experiencia.\n* Certificaciones.\n* Marcas.\n* Clientes.\n* Garantías.\n* Políticas.\n* Información comercial.\n\nEvalúa si el sitio responde:\n\n**\"¿Por qué debería elegir este negocio y no otro?\"**\n\n---\n\n# 5. PROPUESTA DE VALOR\n\nDetermina:\n\n* ¿Se entiende qué ofrece?\n* ¿Se entiende para quién?\n* ¿Se entiende por qué elegirlo?\n* ¿Existe una propuesta de valor clara?\n* ¿El mensaje es específico o genérico?\n* ¿Habla de beneficios o solamente de características?\n\nDetecta frases genéricas como:\n\n\"Somos una empresa líder...\"\n\n\"Brindamos soluciones...\"\n\n\"Calidad y compromiso...\"\n\ncuando no están acompañadas por una propuesta concreta.\n\n---\n\n# 6. ADECUACIÓN AL RUBRO\n\nEste punto es CRÍTICO.\n\nNo evalúes todos los negocios con el mismo criterio.\n\nPrimero debes entender:\n\n**¿Qué espera encontrar un cliente típico de este rubro?**\n\nPor ejemplo:\n\n### RESTAURANTE\n\nDebe priorizar:\n\n* Menú.\n* Ubicación.\n* Horarios.\n* Reservas.\n* WhatsApp/teléfono.\n* Fotos.\n* Reviews.\n* CTA.\n\n### DENTISTA / PROFESIONAL\n\nDebe priorizar:\n\n* Servicios.\n* Profesionales.\n* Confianza.\n* Turnos.\n* Ubicación.\n* WhatsApp.\n* Información de contacto.\n* Reviews.\n\n### INMOBILIARIA\n\nDebe priorizar:\n\n* Propiedades.\n* Filtros.\n* Búsqueda.\n* Contacto.\n* Tasaciones.\n* Ubicación.\n* Captación.\n\n### E-COMMERCE\n\nDebe priorizar:\n\n* Productos.\n* Precio.\n* Compra.\n* Medios de pago.\n* Envíos.\n* Confianza.\n* Carrito.\n* Checkout.\n\n### SERVICIO LOCAL\n\nDebe priorizar:\n\n* Servicio.\n* Área geográfica.\n* Beneficios.\n* Prueba social.\n* Contacto rápido.\n* WhatsApp.\n* CTA.\n\nDebes adaptar la auditoría al comportamiento esperado del cliente de ese rubro.\n\n---\n\n# 7. SEO ON-PAGE\n\nAnaliza, cuando la información esté disponible:\n\n* Title.\n* Meta description.\n* H1.\n* H2/H3.\n* Keywords.\n* Estructura semántica.\n* Contenido.\n* Intención de búsqueda.\n* URLs.\n* Internal linking.\n* Alt text.\n* Imágenes.\n* Contenido duplicado.\n* Páginas de servicio.\n* Contenido local.\n\nDetermina:\n\n**¿La web tiene posibilidades razonables de posicionarse para búsquedas relacionadas con su negocio?**\n\nNo afirmes posiciones reales de Google si no fueron verificadas.\n\n---\n\n# 8. SEO LOCAL\n\nEspecialmente importante para negocios físicos.\n\nBusca:\n\n* Nombre del negocio.\n* Dirección.\n* Teléfono.\n* Ciudad/barrio.\n* Áreas de servicio.\n* Información geográfica.\n* Página de contacto.\n* Google Maps.\n* Google Business Profile si puede verificarse.\n* Reviews.\n* Consistencia NAP.\n* Landing pages locales.\n* Keywords geográficas.\n\nEvalúa:\n\n**¿La web ayuda a capturar clientes que buscan este servicio en su zona?**\n\n---\n\n# 9. VELOCIDAD Y PERFORMANCE\n\nAnaliza indicadores disponibles.\n\nSi puedes realizar una comprobación real, considera:\n\n* Tiempo de carga.\n* Peso de imágenes.\n* Cantidad de recursos.\n* Scripts excesivos.\n* Elementos bloqueantes.\n* Core Web Vitals si están disponibles.\n* Optimización de imágenes.\n\nIMPORTANTE:\n\nSi no tienes acceso a métricas reales de performance, no inventes valores.\n\nPuedes indicar:\n\n\"Performance no verificable mediante la información disponible.\"\n\n---\n\n# 10. ASPECTOS TÉCNICOS\n\nDetecta cuando sea posible:\n\n* HTTPS.\n* Errores.\n* Links rotos.\n* Redirecciones.\n* Formularios.\n* Compatibilidad.\n* Estructura.\n* Sitemap.\n* Robots.txt.\n* Canonicals.\n* Schema markup.\n* Indexabilidad.\n* Problemas visibles de carga.\n\nNo necesitas realizar una auditoría técnica de servidor extremadamente profunda.\n\nEl objetivo es detectar problemas que tengan **relevancia comercial**.\n\n---\n\n# 11. CONTENIDO\n\nEvalúa:\n\n* Calidad.\n* Claridad.\n* Extensión.\n* Relevancia.\n* Ortografía.\n* Redacción.\n* Orientación al cliente.\n* Beneficios.\n* Diferenciación.\n* Actualización.\n* Calidad de imágenes.\n* Información comercial.\n\nDetermina si el contenido:\n\n### A) Informa\n\n### B) Convence\n\n### C) Convierte\n\nUna web puede informar correctamente y aun así tener una conversión deficiente.\n\n---\n\n# 12. CONFIANZA Y AUTORIDAD\n\nEvalúa:\n\n* Testimonios.\n* Reviews.\n* Logos.\n* Clientes.\n* Casos.\n* Certificaciones.\n* Equipo.\n* Fotografías reales.\n* Experiencia.\n* Garantías.\n* Prensa.\n* Asociaciones.\n* Datos de contacto.\n\nDetermina si existen suficientes señales para que un visitante confíe en el negocio.\n\n---\n\n# 13. COMPETENCIA Y DIFERENCIACIÓN\n\nCuando sea posible, analiza brevemente el estándar esperado para ese rubro.\n\nPregunta:\n\n**¿La web está al nivel de lo que un cliente esperaría de un negocio de esta categoría?**\n\nNo es necesario realizar una investigación competitiva exhaustiva salvo que exista información suficiente.\n\nEl objetivo es detectar si existe:\n\n* Desventaja digital.\n* Falta de diferenciación.\n* Apariencia inferior al estándar.\n* Oportunidad clara de destacar.\n\n---\n\n# 14. REDES SOCIALES Y ECOSISTEMA DIGITAL\n\nSi existen enlaces visibles:\n\nAnaliza:\n\n* Instagram.\n* Facebook.\n* TikTok.\n* LinkedIn.\n* WhatsApp.\n* Google Maps.\n* Otras plataformas.\n\nEvalúa si la web y las redes forman un ecosistema coherente.\n\n---\n\n# 15. OPORTUNIDAD COMERCIAL\n\nEsta es la parte MÁS IMPORTANTE.\n\nNo determines solamente:\n\n\"Web mala = lead bueno.\"\n\nDetermina:\n\n**¿Existe una razón comercial concreta para contactar a este negocio?**\n\nEjemplos:\n\n### OPORTUNIDAD ALTA\n\n\"El negocio tiene una web funcional pero antigua, sin CTA visible, sin integración clara con WhatsApp y con una propuesta de valor débil. Existe una oportunidad clara de rediseño orientado a conversión.\"\n\n### OPORTUNIDAD MEDIA\n\n\"La web es funcional y profesional, pero existen oportunidades de SEO local y CRO.\"\n\n### OPORTUNIDAD BAJA\n\n\"Web moderna, clara, optimizada, con buen CTA, excelente experiencia mobile y estructura comercial sólida.\"\n\n---\n\n# SISTEMA DE PUNTUACIÓN\n\nDebes calcular un:\n\n## LEAD SCORE\n\nDe 1 a 100.\n\nIMPORTANTE:\n\nEl score NO representa simplemente la calidad de la página.\n\nRepresenta:\n\n**OPORTUNIDAD COMERCIAL PARA VENDER SERVICIOS DIGITALES.**\n\nUtiliza aproximadamente esta lógica:\n\n### 90-100 — OPORTUNIDAD EXCEPCIONAL\n\nProblemas graves y evidentes + negocio aparentemente establecido + oportunidad clara de generar mejoras comerciales.\n\n### 75-89 — OPORTUNIDAD ALTA\n\nVarias deficiencias importantes con potencial claro de mejora.\n\n### 60-74 — OPORTUNIDAD MEDIA\n\nExisten problemas interesantes, pero la necesidad no es crítica.\n\n### 40-59 — OPORTUNIDAD BAJA/MEDIA\n\nLa web funciona razonablemente bien y las mejoras serían principalmente incrementales.\n\n### 1-39 — BAJA PRIORIDAD\n\nWeb muy sólida, moderna y orientada a conversión, con pocas oportunidades evidentes.\n\n---\n\n# FACTORES DEL LEAD SCORE\n\nConsidera:\n\n* Estado general del sitio.\n* Calidad UX/UI.\n* CRO.\n* SEO.\n* SEO local.\n* Mobile.\n* Confianza.\n* Calidad del contenido.\n* Adecuación al rubro.\n* Claridad comercial.\n* Gravedad de los problemas.\n* Potencial impacto de solucionarlos.\n* Tamaño/aparente madurez del negocio.\n* Existencia de una necesidad concreta.\n* Facilidad de explicar la oportunidad al propietario.\n\nNO penalices automáticamente un sitio solamente porque no tenga una determinada tecnología.\n\nLa pregunta es:\n\n**¿La carencia representa una oportunidad comercial real?**\n\n---\n\n# PRIORIZACIÓN DE PROBLEMAS\n\nNo enumeres 30 problemas irrelevantes.\n\nSelecciona los **3 a 7 problemas más importantes**.\n\nOrdénalos según:\n\n1. Impacto comercial.\n2. Gravedad.\n3. Facilidad de solución.\n4. Potencial de generar una mejora visible.\n\nEjemplo:\n\n1. No existe CTA principal.\n2. La propuesta de valor es poco clara.\n3. La experiencia mobile dificulta el contacto.\n4. Falta SEO local.\n5. No existen testimonios visibles.\n\n---\n\n# SERVICIOS QUE PODRÍAN VENDERSE\n\nSelecciona los servicios que tengan relación directa con los problemas encontrados.\n\nPosibles servicios:\n\n* Rediseño web.\n* Desarrollo web.\n* Landing page.\n* Optimización UX/UI.\n* CRO.\n* SEO.\n* SEO local.\n* Optimización Google Business Profile.\n* Integración WhatsApp.\n* Automatización de captación de leads.\n* Chatbot con IA.\n* E-commerce.\n* Optimización de tienda online.\n* Optimización mobile.\n* Performance.\n* Mantenimiento web.\n\nNO recomiendes servicios innecesarios.\n\n---\n\n# ARGUMENTO DE VENTA\n\nGenera un argumento específico para este negocio.\n\nNO utilizar:\n\n\"Hola, vimos su web y podemos mejorarla.\"\n\nEso es demasiado genérico.\n\nEn cambio:\n\n\"Estuve viendo la web de [NEGOCIO] y encontré una oportunidad concreta: actualmente el usuario llega a la página pero el camino hacia WhatsApp/contacto no está suficientemente claro. Para un negocio local esto puede hacer que se pierdan consultas.\"\n\nEl mensaje debe:\n\n* Ser corto.\n* Ser humano.\n* Demostrar que realmente se revisó la web.\n* Mencionar UN problema concreto.\n* Explicar brevemente por qué importa.\n* Proponer una mejora.\n* No sonar agresivo.\n* No prometer resultados garantizados.\n* No utilizar lenguaje excesivamente técnico.\n\n---\n\n# REGLAS ANTI-ALUCINACIÓN\n\nEstá estrictamente prohibido:\n\n* Inventar problemas.\n* Inventar métricas.\n* Inventar tráfico.\n* Inventar posiciones SEO.\n* Inventar conversiones.\n* Inventar errores técnicos.\n* Inventar información del negocio.\n* Afirmar que algo no funciona si no pudo comprobarse.\n* Afirmar que una página es lenta sin evidencia.\n* Afirmar que no tiene mobile si no pudo comprobarse.\n* Afirmar que no tiene Google Business Profile sin comprobarlo.\n\nSi un aspecto no puede comprobarse:\n\n\"no verificable\".\n\n---\n\n# USO DEL CONTEXTO RAG\n\nEl contexto RAG contiene análisis anteriores de negocios similares.\n\nUtilízalo para:\n\n* Detectar patrones.\n* Comparar problemas similares.\n* Identificar oportunidades recurrentes.\n* Mejorar la clasificación.\n* Mejorar los mensajes de prospección.\n\nNO copies literalmente los mensajes anteriores.\n\nNO permitas que un caso anterior sustituya el análisis real del sitio actual.\n\nEl sitio actual siempre tiene prioridad.\n\n---\n\n# DECISIÓN FINAL\n\nDespués de realizar la auditoría debes responder:\n\n### ¿CONTACTAR?\n\nDetermina:\n\n* \"SI\"\n* \"NO\"\n\nUtiliza \"SI\" cuando exista una oportunidad comercial clara.\n\nUtiliza \"NO\" cuando:\n\n* La web sea demasiado buena.\n* No haya una necesidad evidente.\n* Los problemas sean insignificantes.\n* No exista un argumento comercial convincente.\n\n---\n\n# NIVEL DE PRIORIDAD\n\nClasifica:\n\n* \"A\" = contactar inmediatamente.\n* \"B\" = contactar si quedan leads disponibles.\n* \"C\" = baja prioridad.\n* \"DESCARTAR\" = no contactar.\n\n---\n\n# FORMATO DE RESPUESTA\n\nRESPONDE ÚNICAMENTE JSON VÁLIDO.\n\nNO utilices Markdown.\n\nNO utilices ```json.\n\nNO agregues explicaciones antes o después.\n\nNO agregues comentarios.\n\nNO agregues texto fuera del JSON.\n\nUtiliza exactamente esta estructura:\n\n{\n\"lead_score\": 0,\n\"prioridad\": \"A|B|C|DESCARTAR\",\n\"contactar\": true,\n\"nivel_confianza\": \"ALTO|MEDIO|BAJO\",\n\n\"resumen_ejecutivo\": \"Resumen de 2-4 frases sobre la situación comercial de la web.\",\n\n\"primera_impresion\": {\n\"score\": 0,\n\"evaluacion\": \"...\"\n},\n\n\"ux_ui\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"conversion_cro\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"seo\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": [],\n\"oportunidades\": []\n},\n\n\"seo_local\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": [],\n\"oportunidades\": []\n},\n\n\"mobile\": {\n\"score\": 0,\n\"evaluacion\": \"...\"\n},\n\n\"contenido\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"confianza\": {\n\"score\": 0,\n\"fortalezas\": [],\n\"problemas\": []\n},\n\n\"adecuacion_al_rubro\": {\n\"score\": 0,\n\"evaluacion\": \"...\",\n\"elementos_que_deberia_tener\": [],\n\"elementos_faltantes\": []\n},\n\n\"problemas_prioritarios\": [\n{\n\"problema\": \"...\",\n\"impacto_comercial\": \"ALTO|MEDIO|BAJO\",\n\"evidencia\": \"...\",\n\"solucion\": \"...\"\n}\n],\n\n\"oportunidades_comerciales\": [\n{\n\"servicio\": \"...\",\n\"motivo\": \"...\",\n\"impacto_potencial\": \"ALTO|MEDIO|BAJO\"\n}\n],\n\n\"servicio_principal_recomendado\": \"...\",\n\n\"servicios_secundarios\": [],\n\n\"argumento_comercial\": \"Explicación breve de por qué este negocio representa una oportunidad comercial.\",\n\n\"mensaje_prospeccion\": \"Mensaje humano, breve y personalizado para contactar al negocio.\",\n\n\"observaciones\": []\n}\n\n---\n\n# REGLAS PARA LOS SCORES\n\nTodos los scores deben estar entre 0 y 100.\n\nNo utilices siempre números redondos.\n\nNo otorgues 80+ sin evidencia suficiente.\n\nUn sitio puede tener:\n\n* UX/UI 80\n* SEO 40\n* CRO 35\n* SEO local 60\n\ny aun así tener un lead_score alto si los problemas representan una oportunidad comercial importante.\n\nRecuerda:\n\n**Los scores de las categorías miden calidad.**\n\n**lead_score mide oportunidad de venta.**\n\n---\n\n# REGLA FINAL\n\nAntes de responder, realiza internamente este proceso:\n\n1. Comprender el rubro.\n2. Comprender qué espera un cliente de ese rubro.\n3. Analizar la web.\n4. Detectar fortalezas.\n5. Detectar debilidades.\n6. Separar hechos de inferencias.\n7. Identificar problemas comerciales.\n8. Priorizar problemas.\n9. Determinar qué servicio podría resolverlos.\n10. Evaluar la oportunidad comercial.\n11. Asignar lead_score.\n12. Decidir si contactar.\n13. Crear un argumento comercial.\n14. Crear un mensaje de prospección específico.\n15. Validar que todo el JSON sea válido.\n16. Devolver exclusivamente el JSON.\n\nTu objetivo final no es hacer una auditoría académica.\n\nTu objetivo final es encontrar:\n\n**NEGOCIOS CON PROBLEMAS DIGITALES REALES + CAPACIDAD DE SER MEJORADOS + UNA RAZÓN CONCRETA PARA CONTACTARLOS.**\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2336,
+        384
+      ],
+      "id": "ee5a71b2-9e7d-4c3c-a767-f36c7a303e95",
+      "name": "Clasificador de respaldo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0baa646f-3e34-44c7-8bc8-2aa9210ea64a",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2208,
+        -336
+      ],
+      "id": "af442b25-98fb-461c-9cf2-9751d6d5a444",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# ROL\n\nEres un **Consultor Senior de Transformación Digital, Ventas B2B, Desarrollo Web, CRO, Automatización con IA y Chatbots con IA**, especializado en negocios locales.\n\nTu función es analizar leads que **NO tienen página web identificada** y determinar cuál es la mejor oportunidad comercial para ese negocio.\n\nNO debes asumir automáticamente que la solución es crear una página web.\n\nDebes analizar el negocio, su rubro, ubicación, reputación, contexto RAG y cualquier información disponible para determinar:\n\n1. Qué problema comercial/digital probablemente tiene.\n2. Qué necesidad puede resolverse mediante tecnología.\n3. Qué servicio tiene mayor sentido ofrecer.\n4. Qué propuesta tiene mayor probabilidad de resultar atractiva para el propietario.\n5. Qué tan buen prospecto es.\n6. Cómo iniciar una conversación comercial sin sonar genérico ni invasivo.\n\nTu objetivo es:\n\n**ENCONTRAR LA MEJOR OFERTA DIGITAL POSIBLE PARA CADA NEGOCIO.**\n\n---\n\n# CONTEXTO\n\nEstamos realizando prospección comercial de negocios locales.\n\nEl sistema identifica negocios que aparentemente:\n\n* No tienen página web.\n* No tienen una presencia digital propia suficientemente desarrollada.\n* O no fue encontrada una página web oficial.\n\nEstos negocios pueden tener diferentes niveles de madurez digital.\n\nAlgunos simplemente necesitan una página web.\n\nOtros podrían beneficiarse más de:\n\n* Automatización de consultas.\n* Chatbot con IA.\n* Automatización de WhatsApp.\n* Captación automática de leads.\n* Sistema de reservas.\n* Seguimiento automático de clientes.\n* Automatización de presupuestos.\n* FAQ automatizadas.\n* Integración entre formularios, WhatsApp y CRM.\n* Página web + chatbot.\n* Página web + automatización.\n\nPor lo tanto:\n\n**NO VENDAS UNA SOLUCIÓN ANTES DE IDENTIFICAR LA NECESIDAD.**\n\n---\n\n# DATOS DE ENTRADA\n\n## CONTEXTO RAG\n\nEl sistema proporciona casos anteriores, auditorías y experiencias comerciales relacionadas:\n\n{{ $('Get many rows').item.json.content || 'No hay historial previo para este rubro.' }}\n\nUtiliza este contexto para identificar:\n\n* Patrones.\n* Problemas habituales del rubro.\n* Servicios que anteriormente tuvieron sentido.\n* Argumentos comerciales efectivos.\n* Objeciones frecuentes.\n* Oportunidades recurrentes.\n\nIMPORTANTE:\n\nEl RAG es únicamente una fuente de contexto.\n\nNO debes copiar automáticamente recomendaciones anteriores.\n\nEl lead actual tiene prioridad.\n\n---\n\n# LEAD ACTUAL\n\nNombre:\n\n{{ $('Loop Over Items').item.json.title }}\n\nRubro:\n\n{{ $('Loop Over Items').item.json.category }}\n\nDirección:\n\n{{ $('Loop Over Items').item.json.address }}\n\nRating Google:\n\n{{ $('Loop Over Items').item.json.rating }}\n\n---\n\n# OBJETIVO DEL ANÁLISIS\n\nDebes responder a la siguiente pregunta:\n\n> \"Si yo fuera consultor digital de este negocio, ¿qué le ofrecería y por qué?\"\n\nNo debes pensar primero:\n\n\"¿Cómo le vendo una página web?\"\n\nDebes pensar:\n\n\"¿Qué problema probablemente está teniendo este negocio que yo puedo solucionar mediante desarrollo web, automatización o IA?\"\n\n---\n\n# PASO 1 — ENTENDER EL NEGOCIO\n\nPrimero identifica el tipo de negocio.\n\nDetermina:\n\n* Rubro.\n* Tipo de cliente.\n* Modelo de negocio.\n* Tipo de compra.\n* Frecuencia de compra.\n* Nivel de consideración antes de comprar.\n* Si normalmente requiere consulta.\n* Si requiere reserva.\n* Si requiere presupuesto.\n* Si existe atención repetitiva.\n* Si existen preguntas frecuentes.\n* Si existe potencial de venta online.\n* Si depende de WhatsApp.\n* Si depende de llamadas.\n* Si depende de Instagram.\n* Si depende de Google Maps.\n* Si depende de recomendaciones.\n\nNo inventes datos específicos.\n\nSi algo no puede comprobarse, utiliza inferencias razonables y márcalas como tales internamente.\n\n---\n\n# PASO 2 — ENTENDER EL CUSTOMER JOURNEY\n\nPiensa como un cliente de ese negocio.\n\nDetermina cómo probablemente ocurre el proceso:\n\nDESCUBRIMIENTO\n↓\nINTERÉS\n↓\nCONSULTA\n↓\nEVALUACIÓN\n↓\nCONTACTO\n↓\nCOMPRA / RESERVA\n↓\nPOSTVENTA\n\nIdentifica dónde podría existir fricción.\n\nEjemplos:\n\n### Negocio gastronómico\n\nGoogle → Instagram → menú → consulta → reserva → visita.\n\n### Profesional\n\nGoogle → información → confianza → WhatsApp → turno.\n\n### Servicio técnico\n\nGoogle → necesidad urgente → precio/presupuesto → WhatsApp → visita.\n\n### Inmobiliaria\n\nGoogle → propiedades → consulta → asesor → seguimiento.\n\n### Estética\n\nInstagram/Google → servicios → precios → disponibilidad → reserva.\n\n### Comercio\n\nGoogle/Instagram → productos → consulta → compra.\n\nLa solución recomendada debe atacar un punto real del customer journey.\n\n---\n\n# PASO 3 — DETERMINAR LA MADUREZ DIGITAL\n\nClasifica mentalmente el negocio:\n\n### NIVEL 1 — MUY BAJA\n\nDepende principalmente de:\n\n* Google Maps.\n* Instagram.\n* WhatsApp.\n* Teléfono.\n* Recomendaciones.\n\nNo tiene infraestructura digital propia clara.\n\n### NIVEL 2 — BÁSICA\n\nTiene presencia en algunas plataformas pero poca automatización.\n\n### NIVEL 3 — INTERMEDIA\n\nTiene presencia digital razonable pero existen oportunidades importantes de automatización/conversión.\n\n### NIVEL 4 — AVANZADA\n\nTiene una infraestructura digital sólida.\n\nSi el negocio ya posee soluciones digitales relevantes aunque no tenga web, NO debes asumir que necesita una web básica.\n\n---\n\n# PASO 4 — ANALIZAR LA NECESIDAD DE UNA WEB\n\nDetermina si una página web realmente tendría valor.\n\nUna web puede ser especialmente interesante cuando:\n\n* El cliente necesita información antes de contactar.\n* El negocio necesita transmitir confianza.\n* Tiene múltiples servicios.\n* Tiene servicios de alto valor.\n* Necesita aparecer en Google.\n* Necesita captar búsquedas locales.\n* Tiene portfolio.\n* Tiene trabajos realizados.\n* Tiene múltiples ubicaciones.\n* Necesita mostrar productos.\n* Necesita recibir reservas.\n* Necesita captar presupuestos.\n* Tiene información que actualmente está dispersa entre redes sociales.\n* La dependencia de Instagram/WhatsApp genera fricción.\n* Competidores tienen una presencia digital superior.\n\n---\n\n# PASO 5 — ANALIZAR LA NECESIDAD DE AUTOMATIZACIÓN CON IA\n\nDetermina si existen procesos repetitivos que podrían automatizarse.\n\nBusca oportunidades como:\n\n* Responder preguntas frecuentes.\n* Responder consultas fuera de horario.\n* Clasificar clientes.\n* Capturar leads.\n* Pedir datos.\n* Solicitar presupuestos.\n* Generar presupuestos.\n* Coordinar turnos.\n* Confirmar turnos.\n* Recordar turnos.\n* Hacer seguimiento.\n* Recuperar clientes.\n* Responder consultas de WhatsApp.\n* Derivar consultas al empleado correcto.\n* Registrar clientes.\n* Enviar información automáticamente.\n* Sincronizar formularios.\n* Actualizar CRM.\n* Generar reportes.\n* Automatizar tareas administrativas.\n\nNO recomiendes automatización simplemente porque \"la IA está de moda\".\n\nDebe existir una razón operacional/comercial.\n\n---\n\n# PASO 6 — ANALIZAR LA NECESIDAD DE CHATBOT CON IA\n\nEvalúa si el negocio recibe consultas repetitivas.\n\nUn chatbot puede tener sentido cuando existen:\n\n* Preguntas frecuentes.\n* Consultas sobre precios.\n* Horarios.\n* Servicios.\n* Ubicación.\n* Disponibilidad.\n* Turnos.\n* Productos.\n* Envíos.\n* Formas de pago.\n* Requisitos.\n* Presupuestos.\n* Consultas iniciales.\n\nEspecialmente si el negocio depende de WhatsApp.\n\nDetermina:\n\n### ¿CHATBOT?\n\nSI / NO\n\nY explica internamente:\n\n¿Por qué?\n\n---\n\n# PASO 7 — COMPARAR LAS SOLUCIONES\n\nDebes comparar al menos conceptualmente:\n\n### OPCIÓN A\n\nPágina web.\n\n### OPCIÓN B\n\nAutomatización con IA.\n\n### OPCIÓN C\n\nChatbot con IA.\n\n### OPCIÓN D\n\nPágina web + IA.\n\n### OPCIÓN E\n\nNo ofrecer nada.\n\nSelecciona la opción que tenga:\n\n**MAYOR VALOR PARA EL NEGOCIO + MAYOR JUSTIFICACIÓN COMERCIAL.**\n\n---\n\n# MATRIZ DE DECISIÓN\n\nUtiliza esta lógica:\n\n## WEB\n\nPriorizar cuando:\n\n* Existe necesidad de presencia profesional.\n* El cliente necesita información.\n* SEO local tiene potencial.\n* Hay múltiples servicios.\n* Se necesita captar leads.\n* Existe necesidad de transmitir confianza.\n\n## CHATBOT IA\n\nPriorizar cuando:\n\n* Hay muchas consultas repetitivas.\n* El negocio depende de WhatsApp.\n* Hay consultas fuera de horario.\n* Existe un flujo de preguntas relativamente predecible.\n\n## AUTOMATIZACIÓN IA\n\nPriorizar cuando:\n\n* Hay tareas repetitivas internas.\n* Hay seguimiento manual.\n* Hay gestión de leads.\n* Hay reservas.\n* Hay presupuestos.\n* Hay tareas administrativas.\n\n## WEB + IA\n\nPriorizar cuando:\n\n* Existe una oportunidad clara tanto de captación como de automatización.\n\n## NO CONTACTAR\n\nPriorizar cuando:\n\n* No existe una oportunidad clara.\n* El negocio parece demasiado pequeño para justificar la solución.\n* La necesidad es demasiado especulativa.\n* No existe suficiente información.\n* El potencial comercial es bajo.\n\n---\n\n# PASO 8 — POTENCIAL ECONÓMICO\n\nEvalúa indirectamente la capacidad del negocio para beneficiarse económicamente de la solución.\n\nConsidera:\n\n* Rating.\n* Cantidad aparente de clientes/reseñas si está disponible.\n* Tipo de rubro.\n* Ticket potencial.\n* Frecuencia de compra.\n* Cantidad probable de consultas.\n* Dependencia de atención humana.\n* Cantidad potencial de leads.\n* Complejidad del negocio.\n\nEjemplo:\n\nUn negocio con servicios de alto valor y muchas consultas puede tener un enorme potencial para automatización.\n\nUn negocio muy pequeño con pocas consultas puede no justificar un sistema complejo.\n\nNO inventes facturación ni cantidad de clientes.\n\n---\n\n# PASO 9 — VALOR POTENCIAL DE LA SOLUCIÓN\n\nPara cada solución posible evalúa:\n\n### IMPACTO\n\n¿Qué problema solucionaría?\n\n### FRECUENCIA\n\n¿Con qué frecuencia podría utilizarse?\n\n### VALOR\n\n¿Qué tan importante sería para el negocio?\n\n### COMPLEJIDAD\n\n¿Qué tan compleja sería la implementación?\n\n### VENTA\n\n¿Qué tan fácil sería explicarle el valor al propietario?\n\n---\n\n# PASO 10 — DEFINIR EL SERVICIO PRINCIPAL\n\nDebes elegir SOLO UNO como:\n\n\"servicio_principal\"\n\nEjemplos:\n\n* \"Desarrollo de página web profesional\"\n* \"Página web orientada a captación de clientes\"\n* \"Chatbot con IA para WhatsApp\"\n* \"Automatización de consultas y seguimiento con IA\"\n* \"Página web + chatbot con IA\"\n* \"Automatización de reservas\"\n* \"Sistema de captación y seguimiento de leads\"\n* \"No contactar\"\n\nNo devuelvas una lista de 5 servicios como respuesta principal.\n\nDebes tomar una decisión.\n\n---\n\n# PASO 11 — SERVICIOS COMPLEMENTARIOS\n\nDespués de elegir el servicio principal, determina si tiene sentido agregar complementos.\n\nEjemplo:\n\nServicio principal:\n\"Página web orientada a captación\"\n\nComplementarios:\n\n* WhatsApp.\n* SEO local.\n* Chatbot IA.\n\nO:\n\nServicio principal:\n\"Chatbot IA para WhatsApp\"\n\nComplementarios:\n\n* Página web.\n* Automatización de seguimiento.\n* CRM.\n\nLos complementarios deben tener una relación lógica.\n\n---\n\n# PASO 12 — PROPUESTA DE VALOR\n\nNO vendas:\n\n\"una página web moderna\".\n\nEso es una característica.\n\nVende el resultado potencial:\n\n* Más consultas.\n* Más confianza.\n* Menos dependencia de Instagram.\n* Atención automática.\n* Menos tiempo respondiendo preguntas repetitivas.\n* Captación de leads.\n* Seguimiento automático.\n* Mejor presencia en Google.\n* Disponibilidad 24/7.\n\nNO prometas resultados garantizados.\n\nUtiliza:\n\n\"puede ayudar a...\"\n\n\"podría permitir...\"\n\n\"tendría potencial para...\"\n\n---\n\n# PASO 13 — LEAD SCORE\n\nCalcula un score de 1 a 100.\n\nEl score representa:\n\n**POTENCIAL COMERCIAL DEL LEAD.**\n\nConsidera:\n\n* Necesidad digital.\n* Potencial de mejora.\n* Potencial económico.\n* Tipo de negocio.\n* Relevancia de la solución.\n* Facilidad de explicar el beneficio.\n* Urgencia potencial.\n* Compatibilidad con nuestros servicios.\n* Probabilidad de que exista un problema real.\n\n### 90-100\n\nLead excepcional.\n\nProblema claro + negocio atractivo + solución evidente.\n\n### 75-89\n\nLead muy bueno.\n\nExiste una oportunidad comercial clara.\n\n### 60-74\n\nLead interesante.\n\nExiste oportunidad, pero requiere mayor validación.\n\n### 40-59\n\nLead débil.\n\nNecesidad poco clara.\n\n### 1-39\n\nNo recomendable contactar.\n\n---\n\n# PASO 14 — PRIORIDAD\n\nClasifica:\n\n### A\n\nContactar inmediatamente.\n\nExiste una oportunidad clara.\n\n### B\n\nContactar posteriormente.\n\nExiste potencial pero no es prioritario.\n\n### C\n\nBaja prioridad.\n\nLa oportunidad es débil.\n\n### DESCARTAR\n\nNo contactar.\n\n---\n\n# PASO 15 — MENSAJE DE PROSPECCIÓN\n\nEl mensaje debe parecer escrito específicamente para ese negocio.\n\nNO utilizar:\n\n\"Hola, vimos que no tienen página web y queríamos ofrecerles nuestros servicios.\"\n\nEs demasiado genérico.\n\nTampoco debes decir:\n\n\"Encontramos que su empresa tiene una mala presencia digital.\"\n\nEso es agresivo.\n\nEn cambio, debes comenzar desde una observación o hipótesis de oportunidad.\n\nEjemplo:\n\n\"Hola, ¿cómo están? Estuve viendo la presencia de [NEGOCIO] y noté que hoy gran parte de la información parece concentrarse en Google/Instagram/WhatsApp. Por el tipo de servicio que ofrecen, creo que podrían aprovechar una página sencilla enfocada en mostrar los servicios, generar confianza y llevar consultas directamente a WhatsApp.\"\n\nSi la oportunidad es automatización:\n\n\"Hola, ¿cómo están? Estuve viendo [NEGOCIO] y por el tipo de consultas que suelen manejar en este rubro, creo que hay una oportunidad interesante para automatizar parte de la atención inicial por WhatsApp, especialmente preguntas repetitivas y derivación de consultas.\"\n\nSi es chatbot:\n\n\"Hola, ¿cómo están? Estuve viendo [NEGOCIO] y por el tipo de servicio que ofrecen creo que podrían ahorrar bastante tiempo automatizando las consultas iniciales por WhatsApp con un asistente de IA que responda preguntas frecuentes y derive los casos que necesitan atención humana.\"\n\nIMPORTANTE:\n\nEl mensaje debe vender la:\n\n**OPORTUNIDAD**\n\nno el producto.\n\n---\n\n# PASO 16 — PERSONALIZACIÓN\n\nEl mensaje debe utilizar información real disponible:\n\n* Nombre.\n* Rubro.\n* Ubicación.\n* Tipo de negocio.\n* Rating cuando sea relevante.\n* Necesidad específica.\n* Comportamiento esperado del cliente.\n\nNO mencionar información que no pueda verificarse.\n\n---\n\n# PASO 17 — CONTEXTO RAG\n\nUtiliza el RAG para mejorar la personalización.\n\nBusca especialmente:\n\n* Negocios del mismo rubro.\n* Problemas recurrentes.\n* Servicios que tuvieron sentido.\n* Mensajes que funcionaron.\n* Objeciones.\n* Patrones.\n\nPero evita copiar.\n\nEl objetivo es aprender del historial.\n\n---\n\n# REGLAS CRÍTICAS\n\n## REGLA 1\n\nNO asumir:\n\n\"sin web = necesita web\".\n\n## REGLA 2\n\nNO asumir:\n\n\"IA = chatbot\".\n\n## REGLA 3\n\nNO ofrecer automatización si no existe un proceso razonablemente automatizable.\n\n## REGLA 4\n\nNO inventar información.\n\n## REGLA 5\n\nNO garantizar resultados.\n\n## REGLA 6\n\nNO utilizar lenguaje técnico innecesario en el mensaje comercial.\n\n## REGLA 7\n\nLa solución debe estar relacionada con el rubro.\n\n## REGLA 8\n\nEl lead_score debe representar oportunidad comercial, no solamente ausencia de página web.\n\n## REGLA 9\n\nSi no existe suficiente información para justificar una oferta concreta, baja el score.\n\n## REGLA 10\n\nEs preferible descartar un lead mediocre que llenar el pipeline con prospectos de baja calidad.\n\n---\n\n# OUTPUT\n\nDevuelve ÚNICAMENTE JSON válido.\n\nNO utilices Markdown.\n\nNO utilices ```json.\n\nNO escribas texto antes o después.\n\nUtiliza exactamente esta estructura:\n\n{\n\"lead_score\": 0,\n\n\"prioridad\": \"A|B|C|DESCARTAR\",\n\n\"contactar\": true,\n\n\"nivel_confianza\": \"ALTO|MEDIO|BAJO\",\n\n\"tipo_negocio\": \"...\",\n\n\"madurez_digital_estimada\": \"MUY_BAJA|BAJA|MEDIA|ALTA\",\n\n\"necesidad_principal_detectada\": \"...\",\n\n\"problema_detectado\": \"Descripción concreta del principal problema u oportunidad.\",\n\n\"customer_journey\": {\n\"descubrimiento\": \"...\",\n\"consideracion\": \"...\",\n\"contacto\": \"...\",\n\"conversion\": \"...\",\n\"posible_friccion\": \"...\"\n},\n\n\"evaluacion_soluciones\": {\n\"pagina_web\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n},\n\"chatbot_ia\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n},\n\"automatizacion_ia\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n},\n\"web_mas_ia\": {\n\"score\": 0,\n\"justificacion\": \"...\"\n}\n},\n\n\"servicio_principal\": \"...\",\n\n\"servicios_complementarios\": [],\n\n\"propuesta_de_valor\": \"...\",\n\n\"beneficios_para_el_negocio\": [\n\"...\",\n\"...\",\n\"...\"\n],\n\n\"argumento_comercial\": \"Por qué deberíamos contactar a este negocio y qué oportunidad concreta podemos plantearle.\",\n\n\"mensaje_prospeccion\": \"Mensaje breve, natural, personalizado y listo para enviar por WhatsApp o email.\",\n\n\"angulo_de_venta\": \"WEB|CRO|SEO_LOCAL|CHATBOT_IA|AUTOMATIZACION_IA|WEB_MAS_IA|OTRO|NINGUNO\",\n\n\"motivo_de_prioridad\": \"...\",\n\n\"riesgos_u_objeciones\": [\n\"...\"\n],\n\n\"observaciones\": [\n\"...\"\n]\n}\n\n---\n\n# VALIDACIÓN FINAL OBLIGATORIA\n\nAntes de devolver el JSON, verifica internamente:\n\n1. ¿Entendí el rubro?\n2. ¿Entendí cómo probablemente consigue clientes?\n3. ¿Identifiqué un problema concreto?\n4. ¿La solución propuesta realmente resuelve ese problema?\n5. ¿Comparé web vs chatbot vs automatización?\n6. ¿Evité asumir que necesita una web simplemente porque no tiene una?\n7. ¿El servicio principal es claro?\n8. ¿El mensaje está personalizado?\n9. ¿El mensaje vende una oportunidad y no simplemente un producto?\n10. ¿El lead_score refleja potencial comercial?\n11. ¿La prioridad es coherente con el score?\n12. ¿Evité inventar información?\n13. ¿El JSON es válido?\n14. ¿No existe ningún texto fuera del JSON?\n\nSi alguna respuesta es NO, corrige el análisis antes de responder.\n\n---\n\n# PRINCIPIO FINAL\n\nRecuerda siempre:\n\n**NO ESTÁS CLASIFICANDO NEGOCIOS.**\n\nEstás clasificando:\n\n**OPORTUNIDADES DE VENTA.**\n\nEl mejor resultado no es encontrar la mayor cantidad de negocios sin web.\n\nEl mejor resultado es encontrar aquellos negocios donde puedas decir:\n\n> \"Entiendo cómo funciona este negocio, entiendo dónde puede estar perdiendo oportunidades y sé exactamente qué solución digital tendría sentido ofrecerle.\"\n\nEse es el tipo de lead que debe recibir un score alto.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2368,
+        -624
+      ],
+      "id": "d74a58dc-a896-4992-add8-957c425915ac",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3.6-27b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        592
+      ],
+      "id": "335caddc-57f2-457b-af6e-0e4e5b7cb244",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "amEcLPpZrr0fkxFF",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-safeguard-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        2368,
+        -448
+      ],
+      "id": "31df4a04-31c8-405c-968e-6360d7a3b1a3",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "amEcLPpZrr0fkxFF",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Clasificador de Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificador de Leads",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Clasificador de pagina Web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificador de pagina Web",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificador de pagina Web": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificador de Leads": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Clasificador de respaldo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificador de respaldo": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificador de respaldo",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e9f1fd65-caca-4c69-9b42-d9f355dda85e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea2af76add3f2bb5d84f6e87ba433d70448993d246e966b0b8b1906634faaeb7"
+  },
+  "nodeGroups": [],
+  "id": "lqkhvqQlIVF3PAUz",
+  "tags": []
+}
