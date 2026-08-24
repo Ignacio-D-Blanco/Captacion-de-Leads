@@ -43,4 +43,3 @@ El flujo de trabajo se compone de los siguientes nodos e integraciones:
 2.  Importa el archivo directamente en tu instancia de n8n.
 3.  Configura tus propias credenciales en los nodos correspondientes (Serper API, tu proveedor de LLM y Google Sheets).
 4.  Ajusta el nodo inicial de búsqueda con el rubro y ciudad que desees prospectar.
-5.  ¡Ejecuta el flujo y observa cómo se llena tu base de datos!
